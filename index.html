@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maria Ads - Advertising Network</title>
+    <link rel="stylesheet" href="assets/css/reset.css">
+    <link rel="stylesheet" href="assets/css/variables.css">
+    <link rel="stylesheet" href="assets/css/typography.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/sidebar.css">
+    <link rel="stylesheet" href="assets/css/navbar.css">
+    <link rel="stylesheet" href="assets/css/cards.css">
+    <link rel="stylesheet" href="assets/css/buttons.css">
+    <link rel="stylesheet" href="assets/css/forms.css">
+    <link rel="stylesheet" href="assets/css/tables.css">
+    <link rel="stylesheet" href="assets/css/modal.css">
+    <link rel="stylesheet" href="assets/css/notifications.css">
+    <link rel="stylesheet" href="assets/css/dashboard.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+
+    <!-- LANDING PAGE SPECIFIC STYLES -->
+    <style>
+        body.public-page {
+            background-color: #f8fafc;
+            color: #1e293b;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        .public-nav {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            padding: 1rem 0;
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .brand-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-decoration: none;
+        }
+        .nav-links { 
+            display: flex; 
+            gap: 0.75rem; 
+        }
+        /* Fix: Ensure Nav buttons are always visible and properly sized */
+        .public-nav .btn {
+            display: inline-flex !important;
+            padding: 0.5rem 1.25rem !important;
+            font-size: 0.875rem !important;
+            font-weight: 600 !important;
+            border-radius: 0.5rem !important;
+        }
+        .public-nav .btn-primary {
+            background: #000000 !important;
+            color: #ffffff !important;
+        }
+        .public-nav .btn-secondary {
+            background: #f1f5f9 !important;
+            color: #334155 !important;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 6rem 1.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border-bottom-left-radius: 2rem;
+            border-bottom-right-radius: 2rem;
+        }
+        .hero-section .container {
+            max-width: 800px; /* Constrain width for readability on desktop */
+            margin: 0 auto;
+        }
+        .hero-section h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+            color: white;
+        }
+        .hero-section p {
+            font-size: clamp(1rem, 2vw, 1.25rem);
+            max-width: 600px;
+            margin: 0 auto 2.5rem;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        .hero-cta {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        /* Fix: Ensure Hero buttons are fully visible and high contrast */
+        .hero-section .btn {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem 1.5rem !important;
+            font-size: 1rem !important;
+            font-weight: 600 !important;
+            border-radius: 0.75rem !important;
+            text-decoration: none !important;
+            transition: all 0.3s ease !important;
+        }
+        .hero-section .btn-primary {
+            background: white !important;
+            color: #4f46e5 !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .hero-section .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+        .hero-section .btn-outline {
+            background: rgba(255,255,255,0.1) !important;
+            border: 2px solid rgba(255,255,255,0.5) !important;
+            color: white !important;
+        }
+        .hero-section .btn-outline:hover {
+            background: rgba(255,255,255,0.2) !important;
+            border-color: white !important;
+        }
+
+        /* Features & How It Works Sections */
+        .features-section, .how-it-works {
+            padding: 5rem 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .features-section h2, .how-it-works h2 {
+            text-align: center;
+            font-size: clamp(1.75rem, 3vw, 2.5rem);
+            font-weight: 700;
+            margin-bottom: 3rem;
+            color: #1e293b;
+        }
+
+        /* Grid Layouts */
+        .grid {
+            display: grid;
+            gap: 2rem;
+        }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+        /* Custom Cards for Landing */
+        .features-section .card, .how-it-works .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        .features-section .card:hover, .how-it-works .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+            border-color: #c7d2fe;
+        }
+        .features-section .card h3, .how-it-works .card h3 {
+            color: #4f46e5;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .how-it-works ol {
+            list-style: none;
+            padding: 0;
+        }
+        .how-it-works ol li {
+            position: relative;
+            padding-left: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: 500;
+            color: #475569;
+        }
+        .how-it-works ol li::before {
+            content: counter(list-item);
+            counter-increment: list-item;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 1.75rem;
+            height: 1.75rem;
+            background: #eef2ff;
+            color: #4f46e5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.875rem;
+        }
+        .how-it-works ol {
+            counter-reset: list-item;
+        }
+
+        /* Footer */
+        .footer {
+            background: #1e293b;
+            color: #94a3b8;
+            padding: 2.5rem 1.5rem;
+            margin-top: 3rem;
+        }
+        .footer .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .footer p { margin: 0; font-size: 0.9rem; }
+        .footer-links { display: flex; gap: 1.5rem; }
+        .footer-links a {
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        .footer-links a:hover { color: white; }
+
+        /* ===============================================
+           DESKTOP LAYOUT ENHANCEMENTS (Large Screens)
+           =============================================== */
+        @media (min-width: 1024px) {
+            /* Navigation */
+            .public-nav {
+                padding: 1.5rem 0; /* Taller navbar on desktop */
+            }
+            
+            /* Hero Section */
+            .hero-section {
+                padding: 8rem 1.5rem; /* More vertical breathing room */
+            }
+            .hero-cta {
+                flex-direction: row; /* Buttons sit side-by-side on desktop */
+                justify-content: center;
+                gap: 1.5rem;
+            }
+            
+            /* Grid Spacing */
+            .grid {
+                gap: 2.5rem; /* Wider gap between cards on large screens */
+            }
+            
+            /* Premium Card Accents */
+            .features-section .card {
+                border-top: 4px solid transparent;
+                border-radius: 0 0 1rem 1rem; /* Flat top corners for the border accent */
+            }
+            .features-section .card:hover {
+                border-top-color: #4f46e5; /* Indigo accent appears on hover */
+            }
+            
+            .how-it-works .card {
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+            }
+        }
+
+        /* Mobile & Tablet Responsiveness */
+        /* Fix: Stack cards on screens smaller than 900px so they are full width and readable */
+        @media (max-width: 900px) {
+            .grid-3, .grid-2 {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero-section {
+                padding: 4rem 1.5rem;
+            }
+            .hero-cta {
+                width: 100%;
+            }
+            /* Fix: Ensure hero buttons span full width on mobile */
+            .hero-cta .btn-lg {
+                width: 100%;
+                display: flex;
+                justify-content: center;
+            }
+            .footer .container {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body class="public-page">
+
+    <nav class="public-nav">
+        <div class="nav-container">
+            <a href="index.html" class="brand-logo">Maria Ads</a>
+            <div class="nav-links">
+                <a href="login.html" class="btn btn-secondary">Login</a>
+                <a href="signup.html" class="btn btn-primary">Sign Up</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero-section">
+        <div class="container">
+            <h1>Reach Your Audience Everywhere</h1>
+            <p>Maria Ads is a modern advertising network connecting advertisers with premium websites. Launch your campaign today.</p>
+            <div class="hero-cta">
+                <a href="signup.html" class="btn btn-primary btn-lg">Advertise with Maria Ads</a>
+                <a href="signup.html" class="btn btn-outline btn-lg">Publish ads on your website</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="features-section">
+        <div class="container">
+            <h2>Why Choose Maria Ads?</h2>
+            <div class="grid grid-3">
+                <div class="card">
+                    <h3>Targeted Reach</h3>
+                    <p>Display your ads on multiple high-traffic websites and reach your exact demographic.</p>
+                </div>
+                <div class="card">
+                    <h3>Real-time Analytics</h3>
+                    <p>Track impressions, clicks, and spending in real-time with our comprehensive dashboard.</p>
+                </div>
+                <div class="card">
+                    <h3>Budget Control</h3>
+                    <p>Set daily and total budgets. Never spend a cent more than you intend to.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-it-works">
+        <div class="container">
+            <h2>How It Works</h2>
+            <div class="grid grid-2">
+                <div class="card">
+                    <h3>For Advertisers</h3>
+                    <ol>
+                        <li>Create an account.</li>
+                        <li>Add funds to your wallet.</li>
+                        <li>Create a campaign and upload your ad.</li>
+                        <li>Watch the traffic flow in.</li>
+                    </ol>
+                </div>
+                <div class="card">
+                    <h3>For Publishers</h3>
+                    <ol>
+                        <li>Register your website.</li>
+                        <li>Get your placement IDs.</li>
+                        <li>Add the Maria Ads script to your site.</li>
+                        <li>Start earning from your traffic.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2023 Maria Ads. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="terms.html">Terms</a>
+                <a href="privacy.html">Privacy</a>
+                <a href="help.html">Help</a>
+            </div>
+        </div>
+    </footer>
+
+    <script type="module" src="assets/js/firebase.js"></script>
+    <script type="module" src="assets/js/auth.js"></script>
+    <script type="module" src="assets/js/helpers.js"></script>
+    <script type="module" src="assets/js/notifications.js"></script>
+</body>
+</html>

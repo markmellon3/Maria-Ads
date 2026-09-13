@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Maria Ads</title>
+    <!-- CSS Imports -->
+    <link rel="stylesheet" href="assets/css/reset.css">
+    <link rel="stylesheet" href="assets/css/variables.css">
+    <link rel="stylesheet" href="assets/css/typography.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/sidebar.css">
+    <link rel="stylesheet" href="assets/css/navbar.css">
+    <link rel="stylesheet" href="assets/css/cards.css">
+    <link rel="stylesheet" href="assets/css/buttons.css">
+    <link rel="stylesheet" href="assets/css/forms.css">
+    <link rel="stylesheet" href="assets/css/tables.css">
+    <link rel="stylesheet" href="assets/css/modal.css">
+    <link rel="stylesheet" href="assets/css/notifications.css">
+    <link rel="stylesheet" href="assets/css/dashboard.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+
+    <!-- AUTH PAGE SPECIFIC STYLES (WHITE THEME) -->
+    <style>
+        body.auth-page {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f8fafc;
+            background-image: radial-gradient(circle at 0% 0%, rgba(224, 231, 255, 0.5) 0%, transparent 50%), radial-gradient(circle at 100% 100%, rgba(199, 210, 254, 0.5) 0%, transparent 50%);
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        /* Subtle decorative background elements for mobile */
+        body.auth-page::before {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            top: -100px;
+            right: -100px;
+            filter: blur(60px);
+            z-index: 0;
+        }
+
+        .auth-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 440px;
+        }
+
+        /* Clean White Card */
+        .auth-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+        }
+
+        .brand-logo {
+            display: block;
+            text-align: center;
+            font-size: 1.75rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-decoration: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .auth-card h2 {
+            color: #1e293b;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-card > p {
+            color: #64748b;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        /* Form Styling */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        .form-group label {
+            display: block;
+            color: #334155;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.75rem;
+            color: #1e293b;
+            font-size: 16px; /* Prevents iOS auto-zoom */
+            transition: all 0.3s ease;
+            outline: none;
+            box-sizing: border-box;
+        }
+        .form-group input::placeholder {
+            color: #94a3b8;
+        }
+        .form-group input:focus {
+            background: #ffffff;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+
+        /* Primary Button */
+        .btn-primary {
+            width: 100%;
+            padding: 0.875rem;
+            background: #000000;
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+        }
+        .btn-primary:hover {
+            background: #4338ca;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+        }
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        /* Divider */
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.875rem;
+            margin: 1.5rem 0;
+        }
+        .auth-divider::before, .auth-divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .auth-divider::before { margin-right: 0.75rem; }
+        .auth-divider::after { margin-left: 0.75rem; }
+
+        /* Google Button */
+        .google-auth-btn {
+            width: 100%;
+            padding: 0.875rem;
+            background: #ffffff;
+            color: #334155;
+            font-size: 1rem;
+            font-weight: 600;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .google-auth-btn:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+            transform: translateY(-1px);
+        }
+        .google-auth-btn img {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Footer Links */
+        .auth-switch {
+            text-align: center;
+            margin-top: 2rem;
+            color: #64748b;
+            font-size: 0.9rem;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 1.5rem;
+        }
+        .auth-switch a {
+            color: #4f46e5;
+            font-weight: 600;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .auth-switch a:hover {
+            color: #4338ca;
+            text-decoration: underline;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 480px) {
+            .auth-card {
+                padding: 2rem 1.5rem;
+            }
+            body.auth-page {
+                padding: 1rem;
+            }
+        }
+
+        /* ===============================================
+           DESKTOP SPLIT-SCREEN LAYOUT (Large Screens)
+           =============================================== */
+        @media (min-width: 1024px) {
+            body.auth-page {
+                justify-content: flex-end; /* Push form to the right */
+                padding: 0;
+                background-color: #ffffff;
+                background-image: none;
+                align-items: stretch;
+            }
+
+            /* Left Branding Panel */
+            body.auth-page::before {
+                content: 'Maria Ads';
+                width: 55%;
+                height: 100vh;
+                top: 0;
+                left: 0;
+                right: auto;
+                border-radius: 0;
+                background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+                filter: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 4rem;
+                font-weight: 800;
+                color: rgba(255, 255, 255, 0.15);
+                position: fixed;
+                z-index: 0;
+            }
+
+            /* Right Form Panel */
+            .auth-container {
+                width: 45%;
+                margin-left: auto;
+                padding: 4rem 2rem;
+                position: relative;
+                z-index: 10;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .auth-card {
+                background: transparent;
+                border: none;
+                box-shadow: none;
+                padding: 0;
+                max-width: 400px;
+                width: 100%;
+            }
+
+            /* Re-style inputs slightly for the transparent background */
+            .form-group input {
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+            }
+            
+            .auth-switch {
+                border-top: 1px solid #f1f5f9;
+            }
+        }
+    </style>
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <a href="index.html" class="brand-logo">MARIA Ads</a>
+            <h2>Create Account</h2>
+            <p>Start advertising in minutes</p>
+            
+            <form id="signup-form">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" required placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required placeholder="you@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="Min. 6 characters">
+                </div>
+                <div class="form-group">
+                    <label for="confirm-password">Confirm Password</label>
+                    <input type="password" id="confirm-password" required placeholder="********">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block" id="signup-btn">Create Account</button>
+            </form>
+
+            <div class="auth-divider">OR</div>
+
+            <button type="button" class="google-auth-btn">
+                <img src="https://img.icons8.com/fluent/24/000000/google-logo.png" alt="Google">
+                Continue with Google
+            </button>
+
+            <p class="auth-switch">Already have an account? <a href="login.html">Login</a></p>
+        </div>
+    </div>
+
+    <div id="notification-container"></div>
+
+    <script type="module" src="assets/js/firebase.js"></script>
+    <script type="module" src="assets/js/auth.js"></script>
+    <script type="module" src="assets/js/helpers.js"></script>
+    <script type="module" src="assets/js/notifications.js"></script>
+</body>
+</html>

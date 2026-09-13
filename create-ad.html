@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Ad - Maria Ads</title>
+    <!-- CSS Imports (Same as Dashboard) -->
+    <link rel="stylesheet" href="assets/css/reset.css">
+    <link rel="stylesheet" href="assets/css/variables.css">
+    <link rel="stylesheet" href="assets/css/typography.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/sidebar.css">
+    <link rel="stylesheet" href="assets/css/navbar.css">
+    <link rel="stylesheet" href="assets/css/cards.css">
+    <link rel="stylesheet" href="assets/css/buttons.css">
+    <link rel="stylesheet" href="assets/css/forms.css">
+    <link rel="stylesheet" href="assets/css/tables.css">
+    <link rel="stylesheet" href="assets/css/modal.css">
+    <link rel="stylesheet" href="assets/css/notifications.css">
+    <link rel="stylesheet" href="assets/css/dashboard.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body class="dashboard-body">
+    <div class="sidebar" id="sidebar">
+        <!-- Sidebar content identical to dashboard.html -->
+        <div class="sidebar-header"><a href="dashboard.html" class="brand-logo">Maria Ads</a></div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html" class="nav-link">Dashboard</a></li>
+                <li><a href="campaigns.html" class="nav-link">Campaigns</a></li>
+                <li><a href="create-ad.html" class="nav-link active">Create Ad</a></li>
+                <li><a href="analytics.html" class="nav-link">Analytics</a></li>
+                <li><a href="wallet.html" class="nav-link">Wallet</a></li>
+                <li><a href="websites.html" class="nav-link">Websites</a></li>
+                <li><a href="profile.html" class="nav-link">Profile</a></li>
+                <li><a href="settings.html" class="nav-link">Settings</a></li>
+                <li><a href="help.html" class="nav-link">Help</a></li>
+                <li><button id="logout-btn" class="nav-link logout-btn">Logout</button></li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <header class="navbar">
+            <button class="menu-toggle" id="menu-toggle">☰</button>
+            <div class="navbar-profile">
+                <span class="user-name" id="nav-username">Loading...</span>
+                <a href="profile.html" class="profile-icon">U</a>
+            </div>
+        </header>
+
+        <main class="dashboard-content">
+            <h1>Create New Campaign</h1>
+            <form id="create-ad-form">
+                <div class="grid grid-2">
+                    <div class="card">
+                        <h2>Campaign Details</h2>
+                        <div class="form-group">
+                            <label for="campaign-name">Campaign Name</label>
+                            <input type="text" id="campaign-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="start-date">Start Date</label>
+                            <input type="date" id="start-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="end-date">End Date</label>
+                            <input type="date" id="end-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="total-budget">Total Budget ($)</label>
+                            <input type="number" id="total-budget" min="1" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="daily-budget">Daily Budget ($)</label>
+                            <input type="number" id="daily-budget" min="1" step="0.01" required>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>Advertisement</h2>
+                        <div class="form-group">
+                            <label for="ad-type">Ad Type</label>
+                            <select id="ad-type">
+                                <option value="image">Image</option>
+                                <option value="video">Video</option>
+                                <option value="text">Text</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ad-title">Title</label>
+                            <input type="text" id="ad-title">
+                        </div>
+                        <div class="form-group">
+                            <label for="ad-description">Description</label>
+                            <textarea id="ad-description"></textarea>
+                        </div>
+                        <div class="form-group" id="image-url-group">
+                            <label for="image-url">Image URL</label>
+                            <input type="url" id="image-url" placeholder="https://...">
+                        </div>
+                        <div class="form-group" id="video-url-group" style="display: none;">
+                            <label for="video-url">Video URL</label>
+                            <input type="url" id="video-url" placeholder="https://...">
+                        </div>
+                        <div class="form-group">
+                            <label for="destination-url">Destination URL</label>
+                            <input type="url" id="destination-url" required placeholder="https://...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Preview</h2>
+                    <div id="ad-preview-area" class="ad-preview-container">
+                        <p>Fill out the form to see a preview.</p>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg" id="save-ad-btn">Save Campaign</button>
+            </form>
+        </main>
+    </div>
+
+    <div id="notification-container"></div>
+    <div id="modal-container"></div>
+
+    <!-- JS Imports -->
+    <script type="module" src="assets/js/firebase.js"></script>
+    <script type="module" src="assets/js/helpers.js"></script>
+    <script type="module" src="assets/js/notifications.js"></script>
+    <script type="module" src="assets/js/modal.js"></script>
+    <script type="module" src="assets/js/auth.js"></script>
+    <script type="module" src="assets/js/auth-guard.js"></script>
+    <script type="module" src="assets/js/navigation.js"></script>
+    <script type="module" src="assets/js/create-ad.js"></script>
+</body>
+</html>

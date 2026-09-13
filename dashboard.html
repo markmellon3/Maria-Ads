@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Maria Ads</title>
+    <!-- CSS Imports -->
+    <link rel="stylesheet" href="assets/css/reset.css">
+    <link rel="stylesheet" href="assets/css/variables.css">
+    <link rel="stylesheet" href="assets/css/typography.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/sidebar.css">
+    <link rel="stylesheet" href="assets/css/navbar.css">
+    <link rel="stylesheet" href="assets/css/cards.css">
+    <link rel="stylesheet" href="assets/css/buttons.css">
+    <link rel="stylesheet" href="assets/css/forms.css">
+    <link rel="stylesheet" href="assets/css/tables.css">
+    <link rel="stylesheet" href="assets/css/modal.css">
+    <link rel="stylesheet" href="assets/css/notifications.css">
+    <link rel="stylesheet" href="assets/css/dashboard.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body class="dashboard-body">
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="dashboard.html" class="brand-logo">Maria Ads</a>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="dashboard.html" class="nav-link active">Dashboard</a></li>
+                <li><a href="campaigns.html" class="nav-link">Campaigns</a></li>
+                <li><a href="create-ad.html" class="nav-link">Create Ad</a></li>
+                <li><a href="analytics.html" class="nav-link">Analytics</a></li>
+                <li><a href="wallet.html" class="nav-link">Wallet</a></li>
+                <li><a href="websites.html" class="nav-link">Websites</a></li>
+                <li><a href="profile.html" class="nav-link">Profile</a></li>
+                <li><a href="settings.html" class="nav-link">Settings</a></li>
+                <li><a href="help.html" class="nav-link">Help</a></li>
+                <li><button id="logout-btn" class="nav-link logout-btn">Logout</button></li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <header class="navbar">
+            <button class="menu-toggle" id="menu-toggle">☰</button>
+            <div class="navbar-profile">
+                <span class="user-name" id="nav-username">Loading...</span>
+                <a href="profile.html" class="profile-icon">U</a>
+            </div>
+        </header>
+
+        <main class="dashboard-content">
+            <h1>Dashboard Overview</h1>
+            
+            <div class="grid grid-4 summary-cards">
+                <div class="card stat-card">
+                    <h3>Available Balance</h3>
+                    <p class="stat-value" id="stat-balance">$0.00</p>
+                </div>
+                <div class="card stat-card">
+                    <h3>Total Spent</h3>
+                    <p class="stat-value" id="stat-spent">$0.00</p>
+                </div>
+                <div class="card stat-card">
+                    <h3>Impressions</h3>
+                    <p class="stat-value" id="stat-impressions">0</p>
+                </div>
+                <div class="card stat-card">
+                    <h3>Clicks</h3>
+                    <p class="stat-value" id="stat-clicks">0</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Active Campaigns</h2>
+                    <a href="create-ad.html" class="btn btn-primary">New Campaign</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Campaign</th>
+                                <th>Status</th>
+                                <th>Budget</th>
+                                <th>Spent</th>
+                                <th>Impressions</th>
+                                <th>Clicks</th>
+                                <th>CTR</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboard-campaigns-tbody">
+                            <!-- Populated by JS -->
+                            <tr><td colspan="8" class="text-center">Loading campaigns...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="notification-container"></div>
+    <div id="modal-container"></div>
+
+    <!-- JS Imports -->
+    <script type="module" src="assets/js/firebase.js"></script>
+    <script type="module" src="assets/js/helpers.js"></script>
+    <script type="module" src="assets/js/notifications.js"></script>
+    <script type="module" src="assets/js/modal.js"></script>
+    <script type="module" src="assets/js/auth.js"></script>
+    <script type="module" src="assets/js/auth-guard.js"></script>
+    <script type="module" src="assets/js/navigation.js"></script>
+    <script type="module" src="assets/js/dashboard.js"></script>
+</body>
+</html>
