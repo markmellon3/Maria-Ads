@@ -11,9 +11,13 @@ import {
 import { ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { showNotification } from './notifications.js';
 
+// Flag to prevent race condition during signup
+let isSigningUp = false;
+
 // Sign Up
 export async function signupUser(name, email, password) {
     try {
+        isSigningUp = true; // Tell onAuthStateChanged to wait
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
@@ -30,11 +34,12 @@ export async function signupUser(name, email, password) {
         });
 
         showNotification('Account created successfully!', 'success');
-        window.location.href = 'dashboard.html';
+        window.location.href = 'dashboard.html'; // Now we redirect manually
     } catch (error) {
         console.error("Signup Error:", error);
         showNotification(error.message, 'error');
-        // Re-enable button if error occurs
+        isSigningUp = false; // Reset flag on error
+        
         const signupBtn = document.getElementById('signup-btn');
         if (signupBtn) {
             signupBtn.innerText = 'Create Account';
@@ -52,7 +57,6 @@ export async function loginUser(email, password) {
     } catch (error) {
         console.error("Login Error:", error);
         showNotification(error.message, 'error');
-        // Re-enable button if error occurs
         const loginBtn = document.getElementById('login-btn');
         if (loginBtn) {
             loginBtn.innerText = 'Login';
@@ -61,19 +65,18 @@ export async function loginUser(email, password) {
     }
 }
 
-// --- NEW: Login / Sign Up with Google ---
+// Login / Sign Up with Google
 export async function loginWithGoogle() {
     const provider = new GoogleAuthProvider();
     
     try {
+        isSigningUp = true;
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
 
-        // Check if the user already exists in the database
         const userRef = ref(database, 'users/' + user.uid);
         const snapshot = await get(userRef);
 
-        // If they don't exist, create their profile
         if (!snapshot.exists()) {
             await set(userRef, {
                 name: user.displayName || 'Google User',
@@ -94,6 +97,7 @@ export async function loginWithGoogle() {
     } catch (error) {
         console.error("Google Auth Error:", error);
         showNotification(error.message, 'error');
+        isSigningUp = false;
     }
 }
 
@@ -127,7 +131,9 @@ export function initAuthState() {
 
         if (user) {
             // User is signed in.
-            if (isLoginPage || isSignupPage) {
+            // FIX: If we are in the middle of signing up, DO NOT redirect yet. 
+            // Let the signupUser() function finish saving to the database and redirect itself.
+            if ((isLoginPage || isSignupPage) && !isSigningUp) {
                 window.location.href = 'dashboard.html';
             }
 
@@ -146,15 +152,13 @@ export function initAuthState() {
     });
 }
 
-// ===============================================
-// GLOBAL EVENT LISTENERS (The Fix)
-// ===============================================
+// GLOBAL EVENT LISTENERS
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Handle Signup Form Submission
     const signupForm = document.getElementById('signup-form');
     if (signupForm) {
         signupForm.addEventListener('submit', async (e) => {
-            e.preventDefault(); // THIS PREVENTS THE PAGE REFRESH
+            e.preventDefault();
             
             const name = document.getElementById('name').value;
             const email = document.getElementById('email').value;
@@ -180,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault(); // THIS PREVENTS THE PAGE REFRESH
+            e.preventDefault();
             
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
