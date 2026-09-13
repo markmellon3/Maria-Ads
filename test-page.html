@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maria Ads - Publisher Test Page</title>
+
+    <!-- ==========================================
+         1. LOAD THE MARIA ADS SDK
+         Point this to your local SDK file for testing.
+         ========================================== -->
+  
+<script type="module" src="assets/ad-network/maria-ads.js"></script>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        h2 { font-size: 1.8rem; margin-top: 40px; }
+        p { margin-bottom: 20px; font-size: 1.1rem; }
+        
+        /* Styling the Ad Containers so they are visible before ads load */
+        .maria-ad {
+            margin: 30px 0;
+            padding: 15px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            background-color: #ffffff;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            overflow: hidden; /* Prevents ad from breaking layout */
+        }
+        
+        .refresh-btn {
+            display: inline-block;
+            background: #4f46e5;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+        .refresh-btn:hover { background: #4338ca; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>My Test Blog</h1>
+        <p>This is a mock publisher website to test the Maria Ads SDK.</p>
+    </header>
+
+    <!-- Button to test the manual refresh functionality -->
+    <button class="refresh-btn" onclick="window.MariaAds.refresh()">Manual Refresh Ads</button>
+
+    <main>
+        <h2>Article: The Future of Advertising</h2>
+        <p>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor 
+            incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis 
+            nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+        </p>
+
+        <!-- ==========================================
+             2. PLACE AD CONTAINERS
+             Make sure these IDs match exactly what you created in the Advertiser Dashboard.
+             ========================================== -->
+
+        <!-- Top Banner Ad -->
+        <div class="maria-ad" data-placement="placement_home_top">
+            <!-- Ad will inject here. If empty, it means no eligible campaign exists. -->
+        </div>
+
+        <p>
+            Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore 
+            eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, 
+            sunt in culpa qui officia deserunt mollit anim id est laborum.
+        </p>
+
+        <h2>Section Two: Targeting</h2>
+        <p>
+            Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium 
+            doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore 
+            veritatis et quasi architecto beatae vitae dicta sunt explicabo.
+        </p>
+
+        <!-- Middle Native Ad -->
+        <div class="maria-ad" data-placement="placement_home_middle"></div>
+
+        <p>
+            Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, 
+            sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.
+        </p>
+
+        <!-- Bottom/Sidebar Ad -->
+        <div class="maria-ad" data-placement="placement_sidebar"></div>
+
+        <footer style="margin-top: 50px; text-align: center; font-size: 0.9rem; color: #666;">
+            &copy; 2023 Test Blog. All rights reserved.
+        </footer>
+    </main>
+
+</body>
+</html>
