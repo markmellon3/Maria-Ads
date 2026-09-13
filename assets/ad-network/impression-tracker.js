@@ -1,7 +1,7 @@
 export class ImpressionTracker {
  constructor() {
   // IMPORTANT: Replace with your actual deployed Cloud Function URL
- this.endpoint = 'https://us-central1-maria-ad.cloudfunctions.net/recordImpression';
+ this.endpoint = 'https://maria-ads-backend-production.up.railway.app/api/recordImpression';
   this.observedAds = new Map();
   this.initObserver();
  }
