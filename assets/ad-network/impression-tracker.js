@@ -1,7 +1,7 @@
 export class ImpressionTracker {
  constructor() {
   // IMPORTANT: Replace with your actual deployed Cloud Function URL
-  this.endpoint = 'https://us-central1-YOUR_PROJECT_ID.cloudfunctions.net/recordImpression';
+ this.endpoint = 'https://us-central1-maria-ad.cloudfunctions.net/recordImpression';
   this.observedAds = new Map();
   this.initObserver();
  }
