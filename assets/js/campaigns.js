@@ -16,6 +16,7 @@ async function loadCampaigns() {
 
     try {
         const campaignsRef = ref(database, 'campaigns');
+        // Query campaigns by the logged-in user's ID
         const userCampaignsQuery = query(campaignsRef, orderByChild('advertiserId'), equalTo(user.uid));
         const snapshot = await get(userCampaignsQuery);
 
@@ -28,8 +29,9 @@ async function loadCampaigns() {
             tbody.innerHTML = '<tr><td colspan="10" class="text-center">No campaigns found. <a href="create-ad.html">Create one!</a></td></tr>';
         }
     } catch (error) {
-        console.error("Error fetching campaigns:", error);
-        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error loading campaigns.</td></tr>';
+        console.error("Firebase Query Error:", error);
+        // Display the exact Firebase error message so you know what went wrong
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center text-danger">Error: ${error.message}</td></tr>`;
     }
 }
 
@@ -108,13 +110,15 @@ function handleCampaignAction(id, action) {
                     close();
                     loadCampaigns(); // Refresh list
                 } catch (error) {
-                    showNotification('Failed to update campaign.', 'error');
+                    console.error("Update Error:", error);
+                    showNotification(`Failed to update campaign: ${error.message}`, 'error');
                 }
             }
         }
     ]);
 }
 
+// Listen for auth state changes before loading data
 onAuthStateChanged(auth, (user) => {
     if (user) loadCampaigns();
 });
