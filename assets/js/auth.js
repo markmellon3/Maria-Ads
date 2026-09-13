@@ -25,6 +25,7 @@ export async function signupUser(name, email, password) {
         await set(ref(database, 'users/' + user.uid), {
             name: name,
             email: email,
+            role: 'user', // <-- ADDED DEFAULT ROLE HERE
             balance: 0,
             totalSpent: 0,
             totalImpressions: 0,
@@ -81,6 +82,7 @@ export async function loginWithGoogle() {
             await set(userRef, {
                 name: user.displayName || 'Google User',
                 email: user.email,
+                role: 'user', // <-- ADDED DEFAULT ROLE HERE
                 balance: 0,
                 totalSpent: 0,
                 totalImpressions: 0,
@@ -130,9 +132,7 @@ export function initAuthState() {
         const isSignupPage = window.location.pathname.endsWith('signup.html');
 
         if (user) {
-            // User is signed in.
             // FIX: If we are in the middle of signing up, DO NOT redirect yet. 
-            // Let the signupUser() function finish saving to the database and redirect itself.
             if ((isLoginPage || isSignupPage) && !isSigningUp) {
                 window.location.href = 'dashboard.html';
             }
