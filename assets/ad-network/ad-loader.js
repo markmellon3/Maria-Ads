@@ -1,7 +1,7 @@
 export class AdLoader {
  constructor() {
-  // IMPORTANT: Replace with your actual deployed Cloud Function URL
- this.endpoint = 'https://us-central1-maria-ad.cloudfunctions.net/getEligibleAd';
+  // Added /api/getEligibleAd to the end of your Railway URL
+  this.endpoint = 'https://maria-ads-backend-production.up.railway.app/api/getEligibleAd';
  }
  
  async fetchAd(placementId, pageUrl) {
