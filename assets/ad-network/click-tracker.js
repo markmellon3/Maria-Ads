@@ -1,7 +1,7 @@
 export class ClickTracker {
  constructor() {
   // IMPORTANT: Replace with your actual deployed Cloud Function URL
- this.endpoint = 'https://us-central1-maria-ad.cloudfunctions.net/recordClick';
+ this.endpoint = 'https://maria-ads-backend-production.up.railway.app/api/recordClick';
  }
  
  attachClickEvent(element, clickToken, destinationUrl) {
