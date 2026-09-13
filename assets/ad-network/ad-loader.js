@@ -1,7 +1,7 @@
 export class AdLoader {
  constructor() {
   // IMPORTANT: Replace with your actual deployed Cloud Function URL
-  this.endpoint = 'https://us-central1-YOUR_PROJECT_ID.cloudfunctions.net/getEligibleAd';
+ this.endpoint = 'https://us-central1-maria-ad.cloudfunctions.net/recordClick;
  }
  
  async fetchAd(placementId, pageUrl) {
