@@ -1,0 +1,139 @@
+/* ===============================================
+   Navbar CSS (Fully Responsive Floating Header)
+   =============================================== */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+.navbar {
+    height: 70px;
+    background-color: var(--bg-card); 
+    border: 1px solid var(--border-color-light); 
+    border-radius: 0 0 16px 16px; /* Rounded only at the bottom */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); 
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--spacing-xl);
+    margin: 0 0 var(--spacing-lg) 0; /* Removed top margin, kept bottom */
+    z-index: 900;
+    gap: var(--spacing-md); 
+    transition: box-shadow 0.3s ease, border-color 0.3s ease; 
+    animation: slideDownNavbar 0.5s ease-out forwards; 
+}
+
+/* Desktop: Sticky inside the main-wrapper at top: 0 */
+@media (min-width: 769px) {
+    .navbar {
+        position: sticky;
+        top: 0;
+        margin: 0 0 24px 0;
+    }
+}
+
+/* Scroll Animation State */
+.navbar.is-scrolled {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.1); 
+}
+
+@keyframes slideDownNavbar {
+    0% { opacity: 0; transform: translateY(-20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Left side (Hamburger on mobile) */
+.menu-toggle {
+    display: none; /* Hidden on desktop */
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-primary);
+    padding: var(--spacing-xs);
+}
+
+/* Right side (Profile) */
+.navbar-profile {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+    flex-shrink: 0;
+    text-decoration: none;
+}
+.navbar-profile:hover { background-color: var(--bg-hover); }
+
+.user-name {
+    font-weight: 600;
+    font-size: var(--fs-sm);
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.profile-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: var(--fs-sm);
+    border: 2px solid var(--bg-card);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* ===============================================
+   Mobile Responsiveness for Navbar
+   =============================================== */
+@media (max-width: 768px) {
+    .navbar {
+        position: fixed;
+        top: 0; /* Changed to 0 to sit flush at the top */
+        left: 0;
+        right: 0;
+        padding: 0 var(--spacing-md); 
+        gap: var(--spacing-sm);
+        border-radius: 0 0 16px 16px; /* Rounded only at the bottom */
+    }
+    
+    /* Show the hamburger menu on mobile */
+    .menu-toggle {
+        display: flex;
+        align-items: center;
+    }
+    
+    /* Hide the user's name on very small screens to save space */
+    .user-name {
+        display: none;
+    }
+    
+    .main-content {
+        margin-left: 0 !important;
+        padding-top: 90px; /* Offset for fixed navbar */
+    }
+}
+
+/* ===============================================
+   Sidebar Overlay (For Mobile)
+   =============================================== */
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--transition-base);
+}
+.sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}

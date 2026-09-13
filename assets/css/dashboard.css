@@ -1,0 +1,105 @@
+/* ===============================================
+   Dashboard & Page Specific Layouts
+   =============================================== */
+
+/* General Grid Helpers (used in Create Ad, Analytics, etc.) */
+.grid {
+    display: grid;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 768px) {
+    .grid-2, .grid-3, .grid-4 {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Settings Layout */
+.settings-card { 
+    display: flex; 
+    padding: 0; 
+    min-height: 500px; 
+    flex-direction: column;
+}
+.settings-content { 
+    flex: 1; 
+    padding: var(--spacing-xl); 
+}
+
+.settings-card .danger-zone {
+    border-top: 1px solid var(--border-color-light);
+    margin-top: var(--spacing-lg);
+}
+
+/* Code Blocks (For help/api documentation) */
+.code-block {
+    background: #1e1e2e;
+    color: #a6accd;
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-md);
+    font-family: 'Courier New', Courier, monospace;
+    font-size: var(--fs-sm);
+    overflow-x: auto;
+}
+
+/* Chart Container (For Analytics Page) */
+.chart-container {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    height: 250px;
+    padding-top: 20px;
+    gap: 10px;
+}
+
+.chart-bar {
+    flex: 1; /* Make bars take up equal width */
+    background: linear-gradient(180deg, var(--color-primary) 0%, rgba(0, 0, 0, 0.1) 100%);
+    border-radius: 6px 6px 0 0;
+    min-height: 5px; /* Ensure even 0% data shows a tiny sliver */
+    transition: height 0.5s ease;
+    position: relative;
+}
+
+.chart-bar:hover {
+    background: linear-gradient(180deg, var(--color-primary-dark) 0%, rgba(0, 0, 0, 0.2) 100%);
+}
+
+/* Status Badges (Used in Tables) */
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: capitalize;
+    background: var(--bg-input);
+    color: var(--text-secondary);
+}
+.status-active { background: var(--color-success-bg); color: var(--color-success); }
+.status-paused { background: var(--color-warning-bg); color: var(--color-warning); }
+.status-pending { background: var(--color-info-bg); color: var(--color-info); }
+.status-completed { background: var(--bg-hover); color: var(--text-muted); }
+.status-deletion_requested { background: var(--color-danger-bg); color: var(--color-danger); }
+
+/* Table Responsive Wrapper */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.table-responsive::-webkit-scrollbar {
+    height: 6px;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 10px;
+}
+
+/* Text Utilities */
+.text-center { text-align: center; }
+.text-danger { color: var(--color-danger); }
+.text-muted { color: var(--text-muted); }

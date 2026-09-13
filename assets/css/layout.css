@@ -1,0 +1,245 @@
+/* ===============================================
+   Layout CSS
+   Main app grid, content area, auth layouts
+   =============================================== */
+
+/* Base Container */
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-lg);
+}
+
+/* ===============================================
+   Dashboard Layout
+   =============================================== */
+.dashboard-body {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--bg-body);
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-left: 260px; /* Match sidebar width */
+    transition: margin-left var(--transition-base);
+    min-width: 0; /* Prevents flex overflow */
+}
+
+.dashboard-content {
+    flex: 1;
+    padding: var(--spacing-xl);
+}
+
+/* ===============================================
+   Navbar Layout (Top bar inside dashboard)
+   =============================================== */
+.navbar {
+    height: 70px;
+    background-color: var(--bg-card);
+    border-bottom: 1px solid var(--border-color-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--spacing-xl);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.menu-toggle {
+    display: none; /* Hidden on desktop */
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-primary);
+}
+
+.navbar-profile {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.user-name {
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.profile-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--bg-input);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+/* ===============================================
+   Public Pages Layout (Landing, Terms, Privacy)
+   =============================================== */
+.public-page {
+    background-color: var(--bg-body);
+    color: var(--text-primary);
+}
+
+.public-nav {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-color-light);
+    padding: var(--spacing-md) 0;
+}
+.nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-lg);
+}
+.nav-links {
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+.hero-section {
+    text-align: center;
+    padding: 80px 0;
+    background: linear-gradient(135deg, var(--color-primary) 0%, rgba(0,0,0,0.8) 100%);
+    color: #fff;
+}
+.hero-section h1 { font-size: 3rem; margin-bottom: var(--spacing-md); }
+.hero-section p { font-size: 1.2rem; max-width: 600px; margin: 0 auto var(--spacing-xl); }
+.hero-cta {
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.features-section, .how-it-works {
+    padding: 60px 0;
+}
+.features-section h2, .how-it-works h2 {
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.footer {
+    background: var(--bg-card);
+    border-top: 1px solid var(--border-color-light);
+    padding: var(--spacing-xl) 0;
+    margin-top: 60px;
+}
+.footer .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+}
+.footer-links {
+    display: flex;
+    gap: var(--spacing-lg);
+}
+
+/* ===============================================
+   Auth Layout (Login, Signup)
+   =============================================== */
+.auth-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--bg-body) 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Animated background bubbles for auth */
+.auth-page::before, .auth-page::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    animation: float 8s infinite ease-in-out;
+}
+.auth-page::before { width: 400px; height: 400px; top: -100px; left: -100px; }
+.auth-page::after { width: 300px; height: 300px; bottom: -50px; right: -50px; animation-delay: 4s; }
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-30px); }
+}
+
+.auth-container {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 440px;
+    padding: var(--spacing-md);
+}
+
+.auth-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-2xl);
+    box-shadow: var(--shadow-xl);
+}
+
+.auth-card .brand-logo {
+    display: block;
+    text-align: center;
+    font-family: var(--font-heading);
+    font-size: var(--fs-2xl);
+    font-weight: 700;
+    color: var(--color-primary);
+    margin-bottom: var(--spacing-lg);
+    text-decoration: none;
+}
+
+.auth-card h2 {
+    text-align: center;
+    margin-bottom: var(--spacing-xs);
+}
+.auth-card p {
+    text-align: center;
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-xl);
+    font-size: var(--fs-sm);
+}
+
+.auth-link {
+    display: block;
+    text-align: center;
+    margin-top: var(--spacing-md);
+    font-size: var(--fs-sm);
+    color: var(--color-primary);
+    text-decoration: none;
+}
+.auth-link:hover { text-decoration: underline; }
+
+.auth-switch {
+    text-align: center;
+    margin-top: var(--spacing-xl);
+    color: var(--text-secondary);
+    font-size: var(--fs-sm);
+}
+.auth-switch a {
+    color: var(--color-primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+.auth-switch a:hover { text-decoration: underline; }

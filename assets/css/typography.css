@@ -1,0 +1,296 @@
+/* ===============================================
+   TYPOGRAPHY CSS — ADVANCED PREMIUM UI
+   =============================================== */
+
+/* -----------------------------------------------
+   1. BASE TYPOGRAPHY
+   ----------------------------------------------- */
+body {
+    font-family: var(--font-sans, 'Inter', system-ui, -apple-system, sans-serif);
+    font-size: var(--fs-base, 16px);
+    color: var(--text-primary);
+    background-color: var(--bg-body);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    transition: background-color var(--transition-base), color var(--transition-base);
+}
+
+/* -----------------------------------------------
+   2. FLUID HEADINGS
+   ----------------------------------------------- */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading, 'Poppins', system-ui, sans-serif);
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--text-primary);
+    text-wrap: balance;
+}
+
+/* Fluid Responsive Headings - Tuned for Dashboard Density */
+h1 { font-size: clamp(1.5rem, 1.5vw + 1rem, 2.25rem); } /* 24px - 36px */
+h2 { font-size: clamp(1.25rem, 1vw + 1rem, 1.75rem); } /* 20px - 28px */
+h3 { font-size: clamp(1.125rem, 0.75vw + 0.875rem, 1.375rem); } /* 18px - 22px */
+h4 { font-size: clamp(1rem, 0.5vw + 0.75rem, 1.125rem); } /* 16px - 18px */
+h5 { font-size: 0.9375rem; } /* 15px */
+h6 { font-size: 0.875rem; } /* 14px */
+
+/* -----------------------------------------------
+   3. PARAGRAPHS
+   ----------------------------------------------- */
+p {
+    line-height: 1.6;
+    text-wrap: pretty;
+}
+
+/* -----------------------------------------------
+   4. FONT SIZES (Contextual Utilities)
+   ----------------------------------------------- */
+.text-xs { font-size: var(--fs-xs, 12px); }
+.text-sm { font-size: var(--fs-sm, 14px); }
+.text-base { font-size: var(--fs-base, 16px); }
+.text-lg { font-size: var(--fs-lg, 18px); }
+.text-xl { font-size: var(--fs-xl, 20px); }
+.text-2xl { font-size: var(--fs-2xl, 24px); }
+.text-3xl { font-size: var(--fs-3xl, 30px); }
+
+.text-display {
+    font-size: clamp(2rem, 3vw + 1rem, 3.5rem);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+}
+.text-page-title {
+    font-size: clamp(1.125rem, 1vw + 0.875rem, 1.5rem);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+.text-section-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+}
+
+/* -----------------------------------------------
+   5. FONT WEIGHTS
+   ----------------------------------------------- */
+.font-normal { font-weight: 400; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+.font-extrabold { font-weight: 800; }
+
+/* -----------------------------------------------
+   6. TEXT COLORS & GRADIENTS
+   ----------------------------------------------- */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+.text-navy { color: var(--color-navy); }
+.text-gold { color: var(--color-gold); }
+.text-success { color: var(--color-success); }
+.text-warning { color: var(--color-warning); }
+.text-danger { color: var(--color-danger); }
+.text-info { color: var(--color-info); }
+.text-inverse { color: var(--text-inverse); }
+
+/* Advanced Gradient Text */
+.text-gradient {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    display: inline-block;
+}
+
+/* -----------------------------------------------
+   7. ALIGNMENT
+   ----------------------------------------------- */
+.text-left { text-align: left; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-justify { text-align: justify; }
+
+/* -----------------------------------------------
+   8. LINKS
+   ----------------------------------------------- */
+.text-link {
+    color: var(--color-info);
+    font-weight: 500;
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+.text-link:hover {
+    color: var(--color-navy);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+html[data-theme="dark"] .text-link:hover {
+    color: var(--color-gold);
+}
+.text-link:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* -----------------------------------------------
+   9. TEXT TRANSFORMATIONS
+   ----------------------------------------------- */
+.text-uppercase { text-transform: uppercase; }
+.text-lowercase { text-transform: lowercase; }
+.text-capitalize { text-transform: capitalize; }
+
+/* -----------------------------------------------
+   10. LINE HEIGHT & LETTER SPACING
+   ----------------------------------------------- */
+.leading-tight { line-height: 1.2; }
+.leading-snug { line-height: 1.375; }
+.leading-normal { line-height: 1.5; }
+.leading-relaxed { line-height: 1.625; }
+.leading-loose { line-height: 2; }
+
+.tracking-tighter { letter-spacing: -0.05em; }
+.tracking-tight { letter-spacing: -0.015em; }
+.tracking-normal { letter-spacing: 0; }
+.tracking-wide { letter-spacing: 0.025em; }
+.tracking-wider { letter-spacing: 0.05em; }
+
+/* -----------------------------------------------
+   11. TRUNCATION & LONG CONTENT
+   ----------------------------------------------- */
+.text-nowrap { white-space: nowrap; }
+.text-wrap { white-space: normal; }
+.text-balance { text-wrap: balance; }
+.text-pretty { text-wrap: pretty; }
+.break-word { overflow-wrap: break-word; word-break: break-word; }
+.break-all { word-break: break-all; }
+
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.text-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.text-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* -----------------------------------------------
+   12. FINANCIAL NUMBERS & MONOSPACE
+   ----------------------------------------------- */
+.tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    letter-spacing: -0.01em;
+}
+
+.text-money {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    letter-spacing: -0.02em;
+    font-weight: 600;
+}
+.text-money-positive { color: var(--color-success); }
+.text-money-negative { color: var(--color-danger); }
+
+.text-mono {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.9em;
+    background: var(--bg-input);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color-light);
+    color: var(--text-secondary);
+}
+
+/* -----------------------------------------------
+   13. LABELS, METADATA & SKELETONS
+   ----------------------------------------------- */
+.text-label {
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+.text-caption {
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+.text-overline {
+    font-size: 0.6875rem; /* 11px */
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* Shimmering Text Skeleton for loading states */
+.text-skeleton {
+    display: inline-block;
+    width: 100%;
+    height: 1em;
+    background: linear-gradient(90deg, var(--bg-hover) 25%, var(--bg-input) 50%, var(--bg-hover) 75%);
+    background-size: 200% 100%;
+    animation: textShimmer 1.5s infinite;
+    border-radius: 4px;
+    vertical-align: middle;
+}
+@keyframes textShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* -----------------------------------------------
+   14. RESPONSIVE TYPOGRAPHY
+   ----------------------------------------------- */
+@media (max-width: 768px) {
+    body {
+        font-size: 14px; /* Solid mobile base */
+    }
+    h1 { font-size: 1.5rem; } /* 24px */
+    h2 { font-size: 1.25rem; } /* 20px */
+    h3 { font-size: 1.125rem; } /* 18px */
+    
+    .text-display {
+        letter-spacing: -0.025em;
+    }
+}
+
+@media (max-width: 360px) {
+    body {
+        font-size: 13.5px; /* Slight reduction for tiny screens */
+    }
+    h1 { font-size: 1.375rem; } /* 22px */
+    h2 { font-size: 1.125rem; } /* 18px */
+    
+    .tabular-nums, .text-money {
+        letter-spacing: -0.02em;
+    }
+}
+
+/* -----------------------------------------------
+   15. ACCESSIBILITY
+   ----------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    body, .text-link, .text-skeleton {
+        transition: none !important;
+        animation: none !important;
+    }
+}

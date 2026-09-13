@@ -1,0 +1,268 @@
+/* ===============================================
+   Cards CSS
+   =============================================== */
+
+.card {
+    background-color: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color-light);
+    transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+    margin-bottom: var(--spacing-lg);
+}
+.card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+/* Card Header used across Dashboard pages */
+.card-header {
+    padding: var(--spacing-lg) var(--spacing-xl);
+    border-bottom: 1px solid var(--border-color-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+}
+.card-header h1, 
+.card-header h2 { 
+    font-size: var(--fs-xl); 
+    font-weight: 700; 
+    margin: 0;
+    color: var(--text-primary);
+}
+
+/* ===============================================
+   Stat Cards (Dashboard, Analytics, Wallet)
+   =============================================== */
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.stat-card { 
+    padding: var(--spacing-lg); 
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.stat-card h3 { 
+    color: var(--text-muted); 
+    font-size: var(--fs-sm); 
+    font-weight: 500; 
+    margin-bottom: var(--spacing-md); 
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.stat-value { 
+    font-size: var(--fs-2xl); 
+    font-weight: 700; 
+    margin-bottom: var(--spacing-xs); 
+    color: var(--text-primary);
+}
+
+/* ===============================================
+   Filter Bar (Campaigns, Analytics)
+   =============================================== */
+.filter-bar {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+}
+.filter-btn {
+    background: var(--bg-input);
+    border: 1px solid var(--border-color-light);
+    color: var(--text-secondary);
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.filter-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+.filter-btn.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+
+/* ===============================================
+   Create Ad Preview Area
+   =============================================== */
+.ad-preview-container {
+    padding: var(--spacing-lg);
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-input);
+    text-align: center;
+    color: var(--text-muted);
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.ad-preview-container img,
+.ad-preview-container video {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-sm);
+}
+.ad-preview-container h4 {
+    margin: 5px 0;
+    font-size: 16px;
+    color: var(--text-primary);
+}
+.ad-preview-container p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+/* ===============================================
+   Settings - Danger Zone
+   =============================================== */
+.danger-zone {
+    border: 1px solid var(--color-danger);
+}
+.danger-zone h2 {
+    color: var(--color-danger);
+}
+
+/* ===============================================
+   MOBILE APP DASHBOARD OPTIMIZATION
+   Polished, lightweight native-app feel
+   =============================================== */
+
+/* Base Mobile Tap Highlight & Selection Removal */
+.stat-card,
+.btn,
+.filter-btn,
+.nav-link,
+.quick-action-btn {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Accessibility Focus */
+.btn:focus-visible,
+.stat-card:focus-visible,
+a:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+    /* Base Card Polish */
+    .card {
+        border-radius: 14px !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+        padding: 14px !important;
+        margin-bottom: 14px !important;
+    }
+
+    /* Stats Grid: Strict 2 columns on mobile */
+    .summary-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+        margin-bottom: 16px !important;
+    }
+
+    /* Stat Card Compactness */
+    .stat-card {
+        padding: 12px !important;
+        border-radius: 14px !important;
+        transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+    }
+
+    /* Touch Feedback (Scale down slightly when pressed) */
+    .stat-card:active,
+    .btn:active,
+    .filter-btn:active {
+        transform: scale(0.985) !important;
+    }
+
+    /* Only apply hover effects on devices that actually support hover (Desktop) */
+    @media (hover: hover) {
+        .stat-card:hover,
+        .card:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+        }
+    }
+
+    /* Stat Card Internals */
+    .stat-card h3 {
+        font-size: 11px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        margin-bottom: 6px !important;
+    }
+
+    /* Responsive Numbers (Prevent Overflow) */
+    .stat-value {
+        font-size: clamp(16px, 4.5vw, 20px) !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        letter-spacing: -0.5px !important;
+    }
+
+    /* Card Headers */
+    .card-header {
+        padding: 14px !important;
+    }
+    .card-header h1, 
+    .card-header h2 {
+        font-size: 18px !important;
+    }
+
+    /* Filter Bar Horizontal Scroll */
+    .filter-bar {
+        gap: 8px !important;
+        margin-bottom: 14px !important;
+        overflow-x: auto;
+        flex-wrap: nowrap !important;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+    }
+    .filter-btn {
+        flex-shrink: 0;
+        padding: 6px 12px !important;
+        font-size: 13px !important;
+    }
+}
+
+/* Ultra-Small Screen Adjustments (Below 360px) */
+@media (max-width: 360px) {
+    .summary-cards {
+        gap: 8px !important;
+    }
+    .stat-card {
+        padding: 10px !important;
+    }
+    .stat-card h3 {
+        font-size: 10px !important;
+    }
+    /* Allow numbers to shrink slightly more if needed */
+    .stat-value {
+        font-size: 15px !important;
+    }
+}
+
+/* Mobile Safe Area & Bottom Nav Spacing */
+@media (max-width: 768px) {
+    .main-content {
+        padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+}
