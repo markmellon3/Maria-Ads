@@ -1,3 +1,16 @@
+async function loadCampaigns() {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const tbody = document.getElementById('campaigns-tbody');
+    if (!tbody) {
+        console.error("Campaigns table body not found in DOM.");
+        return;
+    }
+    tbody.innerHTML = '<tr><td colspan="10" class="text-center">Loading campaigns...</td></tr>';
+
+    try {
+        // ... rest of the loadCampaigns code ...
 import { auth, database } from './firebase.js';
 import { ref, get, query, orderByChild, equalTo, update, runTransaction, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { formatCurrency, formatDate, escapeHtml, calculateCTR } from './helpers.js';
