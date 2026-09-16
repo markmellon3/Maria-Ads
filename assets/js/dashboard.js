@@ -1,40 +1,58 @@
 import { auth, database } from './firebase.js';
-import { ref, get, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { ref, query, orderByChild, equalTo, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { formatCurrency, formatDate, escapeHtml, calculateCTR } from './helpers.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-async function loadDashboardData() {
- const user = auth.currentUser;
- if (!user) return;
- 
- try {
-  // Fetch User Stats
-  const userSnap = await get(ref(database, 'users/' + user.uid));
-  if (userSnap.exists()) {
-   const userData = userSnap.val();
-   document.getElementById('stat-balance').innerText = formatCurrency(userData.balance);
-   document.getElementById('stat-spent').innerText = formatCurrency(userData.totalSpent);
-   document.getElementById('stat-impressions').innerText = userData.totalImpressions || 0;
-   document.getElementById('stat-clicks').innerText = userData.totalClicks || 0;
-  }
-  
-  // Fetch Campaigns
-  const campaignsRef = ref(database, 'campaigns');
-  const userCampaignsQuery = query(campaignsRef, orderByChild('advertiserId'), equalTo(user.uid));
-  const campaignsSnap = await get(userCampaignsQuery);
-  
-  const tbody = document.getElementById('dashboard-campaigns-tbody');
-  tbody.innerHTML = '';
-  
-  if (campaignsSnap.exists()) {
-   const campaigns = campaignsSnap.val();
-   let activeCount = 0;
-   let html = '';
-   
-   Object.keys(campaigns).forEach(key => {
-    const c = campaigns[key];
-    if (c.status === 'active') activeCount++;
+let dashboardUnsubscribers = [];
+
+function unsubscribeAll() {
+    dashboardUnsubscribers.forEach(unsub => unsub());
+    dashboardUnsubscribers = [];
+}
+
+function loadDashboardData() {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    // Clear previous listeners if any
+    unsubscribeAll();
+
+    // 1. Real-time listener for User Stats (Balance & Spent)
+    const userRef = ref(database, 'users/' + user.uid);
+    const unsubUser = onValue(userRef, (snapshot) => {
+        if (snapshot.exists()) {
+            const userData = snapshot.val();
+            document.getElementById('stat-balance').innerText = formatCurrency(userData.balance);
+            document.getElementById('stat-spent').innerText = formatCurrency(userData.totalSpent || 0);
+        }
+    });
+    dashboardUnsubscribers.push(unsubUser);
+
+    // 2. Real-time listener for Campaigns (Calculates Clicks/Impressions dynamically)
+    const campaignsRef = ref(database, 'campaigns');
+    const userCampaignsQuery = query(campaignsRef, orderByChild('advertiserId'), equalTo(user.uid));
     
-    html += `
+    const unsubCampaigns = onValue(userCampaignsQuery, (snapshot) => {
+        const tbody = document.getElementById('dashboard-campaigns-tbody');
+        
+        // Calculate Totals from Campaigns
+        let totalImpressions = 0;
+        let totalClicks = 0;
+        let activeCount = 0;
+
+        if (snapshot.exists()) {
+            const campaigns = snapshot.val();
+            let html = '';
+            
+            Object.keys(campaigns).forEach(key => {
+                const c = campaigns[key];
+                
+                // Sum up stats
+                totalImpressions += c.impressions || 0;
+                totalClicks += c.clicks || 0;
+                if (c.status === 'active') activeCount++;
+
+                html += `
                     <tr>
                         <td>${escapeHtml(c.name)}</td>
                         <td><span class="status-badge status-${c.status}">${c.status}</span></td>
@@ -48,24 +66,35 @@ async function loadDashboardData() {
                         </td>
                     </tr>
                 `;
-   });
-   
-   tbody.innerHTML = html;
-  } else {
-   tbody.innerHTML = '<tr><td colspan="8" class="text-center">No campaigns found. Create one!</td></tr>';
-  }
-  
- } catch (error) {
-  console.error("Error loading dashboard data:", error);
-  const tbody = document.getElementById('dashboard-campaigns-tbody');
-  if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading data.</td></tr>';
- }
+            });
+            
+            tbody.innerHTML = html;
+        } else {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No campaigns found. Create one!</td></tr>';
+        }
+
+        // Update the summary cards with calculated totals
+        document.getElementById('stat-impressions').innerText = totalImpressions.toLocaleString();
+        document.getElementById('stat-clicks').innerText = totalClicks.toLocaleString();
+        
+        const activeCampElement = document.getElementById('stat-active-camps');
+        if (activeCampElement) activeCampElement.innerText = activeCount;
+
+    }, (error) => {
+        console.error("Error fetching campaigns:", error);
+        const tbody = document.getElementById('dashboard-campaigns-tbody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading data.</td></tr>';
+    });
+    
+    dashboardUnsubscribers.push(unsubCampaigns);
 }
 
 // Wait for auth state to be ready before loading data
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 onAuthStateChanged(auth, (user) => {
- if (user) {
-  loadDashboardData();
- }
+    if (user) {
+        loadDashboardData();
+    } else {
+        // Clean up listeners when user logs out
+        unsubscribeAll();
+    }
 });
