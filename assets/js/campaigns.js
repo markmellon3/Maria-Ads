@@ -41,7 +41,7 @@ async function loadCampaigns() {
         }
     } catch (error) {
         console.error("Error fetching campaigns:", error);
-        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error loading campaigns.</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center text-danger">Error loading campaigns: ${error.message}</td></tr>`;
     }
 }
 
@@ -131,7 +131,7 @@ function handleCampaignAction(id, action) {
                     await update(ref(database, 'campaigns/' + id), { status: newStatus });
                 } catch (error) {
                     console.error("Update Error:", error);
-                    showNotification('Failed to update campaign.', 'error');
+                    showNotification(`Failed to update campaign: ${error.message}`, 'error');
                     return;
                 }
 
@@ -164,11 +164,6 @@ async function processBilling() {
     // 0. Check current balance first to allow auto-resume
     const balanceSnap = await get(ref(database, 'users/' + user.uid + '/balance'));
     const currentBalance = Number(balanceSnap.val()) || 0;
-    
-    // DEBUG LOG: Check what the database is actually returning for your balance
-    console.log(`[Billing Debug] Raw balance from DB:`, balanceSnap.val());
-    console.log(`[Billing Debug] Parsed balance:`, currentBalance);
-
     let resumedCount = 0;
 
     // Auto-Resume paused ads if user has funds and the ad hasn't hit its budget limit
@@ -184,6 +179,7 @@ async function processBilling() {
                         resumedCount++;
                     } catch (err) {
                         console.error("Failed to auto-resume campaign:", err);
+                        showNotification(`Resume Error: ${err.message}`, 'error', 5000);
                     }
                 }
             }
@@ -216,6 +212,7 @@ async function processBilling() {
                 pausedDueToBudgetCount++;
             } catch (err) {
                 console.error("Failed to auto-pause budget-exhausted campaign:", err);
+                showNotification(`Pause Error: ${err.message}`, 'error', 5000);
             }
             continue;
         }
@@ -242,16 +239,9 @@ async function processBilling() {
         // 2. Check Balance & Deduct Atomically
         const { committed, snapshot } = await runTransaction(userBalanceRef, (currBalance) => {
             const balance = Number(currBalance) || 0;
-            
-            // DEBUG LOG: See exactly what the transaction is evaluating
-            console.log(`[Transaction Debug] Attempting to charge ${actualCharge}. Current DB balance: ${balance}`);
-            
             if (balance >= actualCharge) {
-                const newBal = balance - actualCharge;
-                console.log(`[Transaction Debug] Sufficient funds. Returning new balance: ${newBal}`);
-                return newBal;
+                return balance - actualCharge;
             } else {
-                console.log(`[Transaction Debug] Insufficient funds! Aborting transaction.`);
                 return; // Abort (insufficient funds)
             }
         });
@@ -309,9 +299,10 @@ async function processBilling() {
             renderLiveFeed();
 
         } else {
-            // Aborted: Insufficient Balance
-            console.error("[Billing Debug] Transaction aborted. Check database rules or balance.");
-            showNotification('Insufficient Balance: Please add more funds. Pausing all active ads to prevent negative balance.', 'error', 8000);
+            // Aborted: Insufficient Balance - DISPLAY EXACT BUG ON SCREEN
+            const errorMsg = `Insufficient Balance! Charge: $${actualCharge.toFixed(2)}, Available: $${currentBalance.toFixed(2)}`;
+            console.error("[Billing Debug]", errorMsg);
+            showNotification(errorMsg, 'error', 8000);
             
             for (const camp of activeCampaigns) {
                 await update(ref(database, 'campaigns/' + camp.id), { status: 'paused' });
@@ -323,13 +314,24 @@ async function processBilling() {
                 time: new Date().toLocaleTimeString(),
                 campaigns: activeCampaigns.length,
                 amount: actualCharge,
-                status: 'Failed (Insufficient Balance)'
+                status: errorMsg // Show exact error in table
             });
             renderLiveFeed();
             renderCampaigns('all'); 
         }
     } catch (error) {
+        // CATCH BLOCK: DISPLAY EXACT FIREBASE ERROR ON SCREEN
         console.error("Billing Engine Error:", error);
+        const errorMsg = `Billing Crash: ${error.message}`;
+        showNotification(errorMsg, 'error', 0); // 0 duration keeps it on screen until clicked
+        
+        liveFeedData.unshift({
+            time: new Date().toLocaleTimeString(),
+            campaigns: activeCampaigns.length,
+            amount: actualCharge,
+            status: errorMsg // Show exact crash in table
+        });
+        renderLiveFeed();
     }
 }
 
@@ -396,7 +398,7 @@ function renderLiveFeed() {
             <td>${escapeHtml(item.time)}</td>
             <td>${item.campaigns}</td>
             <td style="color: #ef4444; font-weight: 600;">-${formatCurrency(item.amount)}</td>
-            <td><span style="color: ${item.status === 'Success' ? '#10b981' : '#ef4444'}; font-weight: 600;">${escapeHtml(item.status)}</span></td>
+            <td><span style="color: ${item.status === 'Success' ? '#10b981' : '#ef4444'}; font-weight: 600; font-size: 12px;">${escapeHtml(item.status)}</span></td>
         </tr>
     `).join('');
 }
