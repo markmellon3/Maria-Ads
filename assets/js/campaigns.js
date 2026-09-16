@@ -28,8 +28,8 @@ async function loadCampaigns() {
             allCampaigns = Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data }));
             renderCampaigns('all');
             setupFilters();
-            injectLiveFeedUI(); // Inject the UI for the deductions table
-            startBillingEngine(); // Start the 1-minute deduction timer
+            injectLiveFeedUI();
+            startBillingEngine();
         } else {
             allCampaigns = [];
             tbody.innerHTML = '<tr><td colspan="10" class="text-center">No campaigns found. <a href="create-ad.html">Create one!</a></td></tr>';
@@ -85,7 +85,6 @@ function renderCampaigns(filter) {
         tbody.appendChild(tr);
     });
 
-    // Attach action listeners
     tbody.querySelectorAll('button[data-action]').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const action = e.target.getAttribute('data-action');
@@ -104,11 +103,10 @@ function handleCampaignAction(id, action) {
 
     let modalContent = `<p>Are you sure you want to ${actionText} this campaign?</p>`;
     
-    // Add billing warning if activating
     if (action === 'activate') {
         modalContent += `
             <div style="padding: 10px; background: #fef3c7; border-left: 4px solid #f59e0b; margin-top: 15px; border-radius: 4px;">
-                <strong>Notice:</strong> Activating this ad means your account balance will be automatically deducted <strong>$0.020 per minute</strong> for each active ad.
+                <strong>Notice:</strong> Activating this ad means your account balance will be automatically deducted <strong>$0.020 per minute</strong> for each active ad, until its budget is exhausted.
             </div>
         `;
     }
@@ -127,7 +125,7 @@ function handleCampaignAction(id, action) {
                     await update(ref(database, 'campaigns/' + id), { status: newStatus });
                     showNotification(`Campaign ${actionText}d!`, 'success');
                     close();
-                    loadCampaigns(); // Refresh list
+                    loadCampaigns();
                 } catch (error) {
                     showNotification('Failed to update campaign.', 'error');
                 }
@@ -140,10 +138,7 @@ function handleCampaignAction(id, action) {
 // 3. LIVE BILLING ENGINE (Core Logic)
 // ==========================================
 function startBillingEngine() {
-    // Clear any existing interval to prevent duplicates
     if (billingInterval) clearInterval(billingInterval);
-    
-    // Run immediately, then every 60 seconds (60000 ms)
     processBilling();
     billingInterval = setInterval(processBilling, 60000); 
 }
@@ -153,83 +148,122 @@ async function processBilling() {
     if (!user) return;
 
     const activeCampaigns = allCampaigns.filter(c => c.status === 'active');
-    if (activeCampaigns.length === 0) return; // No active ads, no deduction
+    if (activeCampaigns.length === 0) return;
 
     const chargePerAd = 0.020;
-    const totalCharge = chargePerAd * activeCampaigns.length;
+    let actualCharge = 0;
+    let campaignsToCharge = [];
+    let pausedDueToBudgetCount = 0;
+
+    // 1. Evaluate each campaign individually for budget limits
+    for (let c of activeCampaigns) {
+        const currentSpent = c.spent || 0;
+        const budget = c.budget || 0;
+
+        if (currentSpent >= budget) {
+            // Budget already hit, pause it immediately
+            await update(ref(database, 'campaigns/' + c.id), { status: 'paused' });
+            c.status = 'paused'; // Update local state
+            pausedDueToBudgetCount++;
+            continue;
+        }
+
+        // Calculate exact amount to charge (either full $0.020 or the remaining budget)
+        const amountToCharge = Math.min(chargePerAd, budget - currentSpent);
+        
+        campaignsToCharge.push({
+            id: c.id,
+            amount: amountToCharge,
+            willPauseAfter: (currentSpent + amountToCharge) >= budget
+        });
+        actualCharge += amountToCharge;
+    }
+
+    if (pausedDueToBudgetCount > 0) {
+        showNotification(`${pausedDueToBudgetCount} campaign(s) reached their budget and were paused.`, 'warning', 5000);
+        renderCampaigns('all'); // Re-render UI to show paused status
+    }
+
+    if (actualCharge === 0) return; // All active campaigns just got paused due to budget
 
     const userBalanceRef = ref(database, 'users/' + user.uid + '/balance');
     
     try {
-        // Atomic Transaction to deduct balance safely
+        // 2. Check Balance & Deduct Atomically
         const { committed, snapshot } = await runTransaction(userBalanceRef, (currentBalance) => {
             const balance = currentBalance || 0;
-            if (balance >= totalCharge) {
-                return balance - totalCharge; // Deduct
+            if (balance >= actualCharge) {
+                return balance - actualCharge;
             } else {
-                return; // Abort transaction (insufficient funds)
+                return; // Abort (Insufficient funds)
             }
         });
 
         if (committed) {
-            // Success: Balance was deducted. Now update stats and log feed.
-            const newBalance = snapshot.val();
-            
-            // 1. Update totalSpent atomically
-            await runTransaction(ref(database, 'users/' + user.uid + '/totalSpent'), (curr) => (curr || 0) + totalCharge);
+            // 3. Balance deducted successfully. Now update campaigns and logs.
+            await runTransaction(ref(database, 'users/' + user.uid + '/totalSpent'), (curr) => (curr || 0) + actualCharge);
 
-            // 2. Update each campaign's 'spent' field
-            for (const camp of activeCampaigns) {
-                await runTransaction(ref(database, 'campaigns/' + camp.id + '/spent'), (curr) => (curr || 0) + chargePerAd);
+            let budgetPausedThisCycle = 0;
+
+            // Update each campaign's spent amount and pause if budget hit
+            for (let camp of campaignsToCharge) {
+                await runTransaction(ref(database, 'campaigns/' + camp.id + '/spent'), (curr) => (curr || 0) + camp.amount);
+                
+                // Update local state
+                const localCamp = allCampaigns.find(c => c.id === camp.id);
+                if (localCamp) {
+                    localCamp.spent = (localCamp.spent || 0) + camp.amount;
+                }
+
+                // If this charge caused it to reach budget, pause it
+                if (camp.willPauseAfter) {
+                    await update(ref(database, 'campaigns/' + camp.id), { status: 'paused' });
+                    if (localCamp) localCamp.status = 'paused';
+                    budgetPausedThisCycle++;
+                }
             }
 
-            // 3. Log to database transactions node
+            if (budgetPausedThisCycle > 0) {
+                showNotification(`${budgetPausedThisCycle} campaign(s) reached their budget limit and were paused.`, 'warning', 5000);
+                renderCampaigns('all'); // Re-render to show new paused status
+            }
+
+            // Log Transaction
             const txRef = push(ref(database, 'transactions'));
             await set(txRef, {
                 userId: user.uid,
                 type: 'ad_spending',
-                amount: -totalCharge,
+                amount: -actualCharge,
                 status: 'completed',
-                description: `Auto-deduction for ${activeCampaigns.length} active ad(s)`,
+                description: `Auto-deduction for ${campaignsToCharge.length} active ad(s)`,
                 createdAt: Date.now()
             });
 
-            // 4. Update local UI live feed
-            const feedItem = {
+            // Update Live Feed UI
+            liveFeedData.unshift({
                 time: new Date().toLocaleTimeString(),
-                campaigns: activeCampaigns.length,
-                amount: totalCharge,
+                campaigns: campaignsToCharge.length,
+                amount: actualCharge,
                 status: 'Success'
-            };
-            liveFeedData.unshift(feedItem);
-            if (liveFeedData.length > 10) liveFeedData.pop(); // Keep max 10 records
-            renderLiveFeed();
-
-            // 5. Update local allCampaigns spent value so UI doesn't need full reload
-            activeCampaigns.forEach(camp => {
-                const localCamp = allCampaigns.find(c => c.id === camp.id);
-                if (localCamp) localCamp.spent = (localCamp.spent || 0) + chargePerAd;
             });
+            if (liveFeedData.length > 10) liveFeedData.pop();
+            renderLiveFeed();
 
         } else {
             // Aborted: Insufficient Balance
-            showNotification('Insufficient Balance: Please add more funds to keep your active ads running. Pausing active ads to prevent negative balance.', 'error', 8000);
+            showNotification('Insufficient Balance: Please add more funds. Pausing all active ads to prevent negative balance.', 'error', 8000);
             
-            // Auto-pause all active campaigns to stop bleeding money
             for (const camp of activeCampaigns) {
                 await update(ref(database, 'campaigns/' + camp.id), { status: 'paused' });
             }
             
-            // Add failed entry to feed
             liveFeedData.unshift({
                 time: new Date().toLocaleTimeString(),
                 campaigns: activeCampaigns.length,
-                amount: totalCharge,
+                amount: actualCharge,
                 status: 'Failed (Insufficient Balance)'
             });
             renderLiveFeed();
-
-            // Reload campaigns to reflect paused status
             loadCampaigns(); 
         }
     } catch (error) {
@@ -241,7 +275,7 @@ async function processBilling() {
 // 4. LIVE FEED UI
 // ==========================================
 function injectLiveFeedUI() {
-    if (document.getElementById('billing-feed-card')) return; // Don't inject twice
+    if (document.getElementById('billing-feed-card')) return;
 
     const mainContent = document.querySelector('.dashboard-content');
     if (!mainContent) return;
@@ -267,7 +301,6 @@ function injectLiveFeedUI() {
         </div>
     `;
     
-    // Insert before the campaigns table card
     const campaignsCard = document.querySelector('.card');
     if (campaignsCard) {
         campaignsCard.insertAdjacentHTML('beforebegin', feedHtml);
@@ -302,7 +335,6 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         loadCampaigns();
     } else {
-        // Clean up interval on logout
         if (billingInterval) clearInterval(billingInterval);
         billingInterval = null;
     }
