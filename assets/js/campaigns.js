@@ -164,6 +164,11 @@ async function processBilling() {
     // 0. Check current balance first to allow auto-resume
     const balanceSnap = await get(ref(database, 'users/' + user.uid + '/balance'));
     const currentBalance = Number(balanceSnap.val()) || 0;
+    
+    // DEBUG LOG: Check what the database is actually returning for your balance
+    console.log(`[Billing Debug] Raw balance from DB:`, balanceSnap.val());
+    console.log(`[Billing Debug] Parsed balance:`, currentBalance);
+
     let resumedCount = 0;
 
     // Auto-Resume paused ads if user has funds and the ad hasn't hit its budget limit
@@ -237,9 +242,16 @@ async function processBilling() {
         // 2. Check Balance & Deduct Atomically
         const { committed, snapshot } = await runTransaction(userBalanceRef, (currBalance) => {
             const balance = Number(currBalance) || 0;
+            
+            // DEBUG LOG: See exactly what the transaction is evaluating
+            console.log(`[Transaction Debug] Attempting to charge ${actualCharge}. Current DB balance: ${balance}`);
+            
             if (balance >= actualCharge) {
-                return balance - actualCharge;
+                const newBal = balance - actualCharge;
+                console.log(`[Transaction Debug] Sufficient funds. Returning new balance: ${newBal}`);
+                return newBal;
             } else {
+                console.log(`[Transaction Debug] Insufficient funds! Aborting transaction.`);
                 return; // Abort (insufficient funds)
             }
         });
@@ -298,6 +310,7 @@ async function processBilling() {
 
         } else {
             // Aborted: Insufficient Balance
+            console.error("[Billing Debug] Transaction aborted. Check database rules or balance.");
             showNotification('Insufficient Balance: Please add more funds. Pausing all active ads to prevent negative balance.', 'error', 8000);
             
             for (const camp of activeCampaigns) {
