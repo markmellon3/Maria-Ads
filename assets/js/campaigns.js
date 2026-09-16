@@ -103,6 +103,7 @@ function handleCampaignAction(id, action) {
 
     let modalContent = `<p>Are you sure you want to ${actionText} this campaign?</p>`;
     
+    // Add billing warning if activating
     if (action === 'activate') {
         modalContent += `
             <div style="padding: 10px; background: #fef3c7; border-left: 4px solid #f59e0b; margin-top: 15px; border-radius: 4px;">
@@ -121,13 +122,24 @@ function handleCampaignAction(id, action) {
             label: actionText,
             class: action === 'pause' ? 'btn-warning' : 'btn-success',
             onClick: async (modal, close) => {
+                // 1. Isolate the database update
                 try {
                     await update(ref(database, 'campaigns/' + id), { status: newStatus });
-                    showNotification(`Campaign ${actionText}d!`, 'success');
-                    close();
-                    loadCampaigns();
                 } catch (error) {
+                    console.error("Update Error:", error);
                     showNotification('Failed to update campaign.', 'error');
+                    return;
+                }
+
+                // 2. If we reach here, the update succeeded!
+                showNotification(`Campaign ${actionText}d!`, 'success');
+                close();
+
+                // 3. Refresh list safely in its own try/catch block
+                try {
+                    await loadCampaigns();
+                } catch (e) {
+                    console.error("Reload error after campaign update:", e);
                 }
             }
         }
