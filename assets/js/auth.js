@@ -8,7 +8,7 @@ import {
     GoogleAuthProvider,
     signInWithPopup
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { ref, set, get, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { showNotification } from './notifications.js';
 
 // Flag to prevent race condition during signup
@@ -26,7 +26,8 @@ export async function signupUser(name, email, password) {
             name: name,
             email: email,
             role: 'user', // <-- ADDED DEFAULT ROLE HERE
-            balance: 0,
+            balance: 50, // <-- AUTO $50 SIGNUP BONUS
+            totalDeposited: 50, // <-- UPDATE DEPOSITED STAT
             totalSpent: 0,
             totalImpressions: 0,
             totalClicks: 0,
@@ -34,7 +35,18 @@ export async function signupUser(name, email, password) {
             createdAt: Date.now()
         });
 
-        showNotification('Account created successfully!', 'success');
+        // Log the $50 bonus as a transaction
+        const txRef = push(ref(database, 'transactions'));
+        await set(txRef, {
+            userId: user.uid,
+            type: 'signup_bonus',
+            amount: 50,
+            status: 'completed',
+            description: 'Sign-up bonus credit',
+            createdAt: Date.now()
+        });
+
+        showNotification('Account created successfully! $50 bonus added.', 'success');
         window.location.href = 'dashboard.html'; // Now we redirect manually
     } catch (error) {
         console.error("Signup Error:", error);
@@ -83,14 +95,27 @@ export async function loginWithGoogle() {
                 name: user.displayName || 'Google User',
                 email: user.email,
                 role: 'user', // <-- ADDED DEFAULT ROLE HERE
-                balance: 0,
+                balance: 50, // <-- AUTO $50 SIGNUP BONUS
+                totalDeposited: 50, // <-- UPDATE DEPOSITED STAT
                 totalSpent: 0,
                 totalImpressions: 0,
                 totalClicks: 0,
                 status: 'active',
                 createdAt: Date.now()
             });
-            showNotification('Google account registered successfully!', 'success');
+
+            // Log the $50 bonus as a transaction
+            const txRef = push(ref(database, 'transactions'));
+            await set(txRef, {
+                userId: user.uid,
+                type: 'signup_bonus',
+                amount: 50,
+                status: 'completed',
+                description: 'Sign-up bonus credit',
+                createdAt: Date.now()
+            });
+
+            showNotification('Google account registered successfully! $50 bonus added.', 'success');
         } else {
             showNotification('Logged in with Google!', 'success');
         }
@@ -231,4 +256,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize auth state listener
     initAuthState();
-});
+}); 
