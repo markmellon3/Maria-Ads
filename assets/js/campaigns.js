@@ -1,16 +1,3 @@
-async function loadCampaigns() {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    const tbody = document.getElementById('campaigns-tbody');
-    if (!tbody) {
-        console.error("Campaigns table body not found in DOM.");
-        return;
-    }
-    tbody.innerHTML = '<tr><td colspan="10" class="text-center">Loading campaigns...</td></tr>';
-
-    try {
-        // ... rest of the loadCampaigns code ...
 import { auth, database } from './firebase.js';
 import { ref, get, query, orderByChild, equalTo, update, runTransaction, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { formatCurrency, formatDate, escapeHtml, calculateCTR } from './helpers.js';
@@ -30,6 +17,10 @@ async function loadCampaigns() {
     if (!user) return;
 
     const tbody = document.getElementById('campaigns-tbody');
+    if (!tbody) {
+        console.error("Campaigns table body not found in DOM.");
+        return;
+    }
     tbody.innerHTML = '<tr><td colspan="10" class="text-center">Loading campaigns...</td></tr>';
 
     try {
@@ -67,6 +58,7 @@ function setupFilters() {
 
 function renderCampaigns(filter) {
     const tbody = document.getElementById('campaigns-tbody');
+    if (!tbody) return;
     tbody.innerHTML = '';
 
     const filtered = filter === 'all' ? allCampaigns : allCampaigns.filter(c => c.status === filter);
@@ -116,7 +108,6 @@ function handleCampaignAction(id, action) {
 
     let modalContent = `<p>Are you sure you want to ${actionText} this campaign?</p>`;
     
-    // Add billing warning if activating
     if (action === 'activate') {
         modalContent += `
             <div style="padding: 10px; background: #fef3c7; border-left: 4px solid #f59e0b; margin-top: 15px; border-radius: 4px;">
@@ -165,7 +156,7 @@ function handleCampaignAction(id, action) {
 function startBillingEngine() {
     if (billingInterval) clearInterval(billingInterval);
     processBilling();
-    billingInterval = setInterval(processBilling, 60000); 
+    billingInterval = setInterval(processBilling, 60000); // Run every 60 seconds
 }
 
 async function processBilling() {
@@ -173,7 +164,7 @@ async function processBilling() {
     if (!user) return;
 
     const activeCampaigns = allCampaigns.filter(c => c.status === 'active');
-    if (activeCampaigns.length === 0) return;
+    if (activeCampaigns.length === 0) return; // No active ads, no deduction
 
     const chargePerAd = 0.020;
     let actualCharge = 0;
@@ -182,14 +173,19 @@ async function processBilling() {
 
     // 1. Evaluate each campaign individually for budget limits
     for (let c of activeCampaigns) {
-        const currentSpent = c.spent || 0;
-        const budget = c.budget || 0;
+        // Use Number() to prevent string concatenation issues
+        const currentSpent = Number(c.spent) || 0;
+        const budget = Number(c.budget) || 0;
 
         if (currentSpent >= budget) {
             // Budget already hit, pause it immediately
-            await update(ref(database, 'campaigns/' + c.id), { status: 'paused' });
-            c.status = 'paused'; // Update local state
-            pausedDueToBudgetCount++;
+            try {
+                await update(ref(database, 'campaigns/' + c.id), { status: 'paused' });
+                c.status = 'paused'; // Update local state
+                pausedDueToBudgetCount++;
+            } catch (err) {
+                console.error("Failed to auto-pause budget-exhausted campaign:", err);
+            }
             continue;
         }
 
@@ -216,28 +212,36 @@ async function processBilling() {
     try {
         // 2. Check Balance & Deduct Atomically
         const { committed, snapshot } = await runTransaction(userBalanceRef, (currentBalance) => {
-            const balance = currentBalance || 0;
+            // FIX: Use Number() to prevent NaN if Firebase stored the balance as a string
+            const balance = Number(currentBalance) || 0;
             if (balance >= actualCharge) {
-                return balance - actualCharge;
+                return balance - actualCharge; // Deduct
             } else {
-                return; // Abort (Insufficient funds)
+                return; // Abort transaction (insufficient funds)
             }
         });
 
         if (committed) {
             // 3. Balance deducted successfully. Now update campaigns and logs.
-            await runTransaction(ref(database, 'users/' + user.uid + '/totalSpent'), (curr) => (curr || 0) + actualCharge);
+            
+            // FIX: Use Number() for totalSpent
+            await runTransaction(ref(database, 'users/' + user.uid + '/totalSpent'), (curr) => {
+                return (Number(curr) || 0) + actualCharge;
+            });
 
             let budgetPausedThisCycle = 0;
 
             // Update each campaign's spent amount and pause if budget hit
             for (let camp of campaignsToCharge) {
-                await runTransaction(ref(database, 'campaigns/' + camp.id + '/spent'), (curr) => (curr || 0) + camp.amount);
+                // FIX: Use Number() for campaign spent
+                await runTransaction(ref(database, 'campaigns/' + camp.id + '/spent'), (curr) => {
+                    return (Number(curr) || 0) + camp.amount;
+                });
                 
                 // Update local state
                 const localCamp = allCampaigns.find(c => c.id === camp.id);
                 if (localCamp) {
-                    localCamp.spent = (localCamp.spent || 0) + camp.amount;
+                    localCamp.spent = (Number(localCamp.spent) || 0) + camp.amount;
                 }
 
                 // If this charge caused it to reach budget, pause it
