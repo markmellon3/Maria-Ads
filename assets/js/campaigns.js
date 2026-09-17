@@ -9,6 +9,7 @@ let allCampaigns = [];
 let billingInterval = null;
 let liveFeedData = [];
 let totalBilledThisSession = 0;
+let isBillingInProgress = false; // Prevents concurrent billing crashes
 
 // ==========================================
 // 1. LOAD & RENDER CAMPAIGNS
@@ -158,84 +159,94 @@ function startBillingEngine() {
 }
 
 async function processBilling() {
+    // CRITICAL FIX: Prevent multiple concurrent billing cycles from crashing the transaction
+    if (isBillingInProgress) {
+        console.log("[Billing Debug] Billing already in progress, skipping this cycle.");
+        return;
+    }
+    isBillingInProgress = true;
+
     const user = auth.currentUser;
-    if (!user) return;
+    if (!user) {
+        isBillingInProgress = false;
+        return;
+    }
 
-    // 0. Check current balance first to allow auto-resume
-    const balanceSnap = await get(ref(database, 'users/' + user.uid + '/balance'));
-    const currentBalance = Number(balanceSnap.val()) || 0;
-    let resumedCount = 0;
+    try {
+        // 0. Check current balance first to allow auto-resume
+        const balanceSnap = await get(ref(database, 'users/' + user.uid + '/balance'));
+        const currentBalance = Number(balanceSnap.val()) || 0;
+        let resumedCount = 0;
 
-    // Auto-Resume paused ads if user has funds and the ad hasn't hit its budget limit
-    if (currentBalance > 0) {
-        for (let c of allCampaigns) {
-            if (c.status === 'paused') {
-                const currentSpent = Number(c.spent) || 0;
-                const budget = Number(c.budget) || 0;
-                if (currentSpent < budget) {
-                    try {
-                        await update(ref(database, 'campaigns/' + c.id), { status: 'active' });
-                        c.status = 'active'; // Update local state
-                        resumedCount++;
-                    } catch (err) {
-                        console.error("Failed to auto-resume campaign:", err);
-                        showNotification(`Resume Error: ${err.message}`, 'error', 5000);
+        // Auto-Resume paused ads if user has funds and the ad hasn't hit its budget limit
+        if (currentBalance > 0) {
+            for (let c of allCampaigns) {
+                if (c.status === 'paused') {
+                    const currentSpent = Number(c.spent) || 0;
+                    const budget = Number(c.budget) || 0;
+                    if (currentSpent < budget) {
+                        try {
+                            await update(ref(database, 'campaigns/' + c.id), { status: 'active' });
+                            c.status = 'active'; // Update local state
+                            resumedCount++;
+                        } catch (err) {
+                            console.error("Failed to auto-resume campaign:", err);
+                            showNotification(`Resume Error: ${err.message}`, 'error', 5000);
+                        }
                     }
                 }
             }
         }
-    }
 
-    if (resumedCount > 0) {
-        showNotification(`${resumedCount} paused campaign(s) automatically resumed.`, 'success', 5000);
-        renderCampaigns('all'); // Re-render UI to show active status
-    }
-
-    // Filter for ads that are currently active to bill them
-    const activeCampaigns = allCampaigns.filter(c => c.status === 'active');
-    if (activeCampaigns.length === 0) return;
-
-    const chargePerAd = 0.020;
-    let actualCharge = 0;
-    let campaignsToCharge = [];
-    let pausedDueToBudgetCount = 0;
-
-    // 1. Evaluate each campaign individually for budget limits
-    for (let c of activeCampaigns) {
-        const currentSpent = Number(c.spent) || 0;
-        const budget = Number(c.budget) || 0;
-
-        if (currentSpent >= budget) {
-            try {
-                await update(ref(database, 'campaigns/' + c.id), { status: 'paused' });
-                c.status = 'paused';
-                pausedDueToBudgetCount++;
-            } catch (err) {
-                console.error("Failed to auto-pause budget-exhausted campaign:", err);
-                showNotification(`Pause Error: ${err.message}`, 'error', 5000);
-            }
-            continue;
+        if (resumedCount > 0) {
+            showNotification(`${resumedCount} paused campaign(s) automatically resumed.`, 'success', 5000);
+            renderCampaigns('all'); // Re-render UI to show active status
         }
 
-        const amountToCharge = Math.min(chargePerAd, budget - currentSpent);
-        campaignsToCharge.push({
-            id: c.id,
-            amount: amountToCharge,
-            willPauseAfter: (currentSpent + amountToCharge) >= budget
-        });
-        actualCharge += amountToCharge;
-    }
+        // Filter for ads that are currently active to bill them
+        const activeCampaigns = allCampaigns.filter(c => c.status === 'active');
+        if (activeCampaigns.length === 0) return;
 
-    if (pausedDueToBudgetCount > 0) {
-        showNotification(`${pausedDueToBudgetCount} campaign(s) reached their budget and were paused.`, 'warning', 5000);
-        renderCampaigns('all');
-    }
+        const chargePerAd = 0.020;
+        let actualCharge = 0;
+        let campaignsToCharge = [];
+        let pausedDueToBudgetCount = 0;
 
-    if (actualCharge === 0) return;
+        // 1. Evaluate each campaign individually for budget limits
+        for (let c of activeCampaigns) {
+            const currentSpent = Number(c.spent) || 0;
+            const budget = Number(c.budget) || 0;
 
-    const userBalanceRef = ref(database, 'users/' + user.uid + '/balance');
-    
-    try {
+            if (currentSpent >= budget) {
+                try {
+                    await update(ref(database, 'campaigns/' + c.id), { status: 'paused' });
+                    c.status = 'paused';
+                    pausedDueToBudgetCount++;
+                } catch (err) {
+                    console.error("Failed to auto-pause budget-exhausted campaign:", err);
+                    showNotification(`Pause Error: ${err.message}`, 'error', 5000);
+                }
+                continue;
+            }
+
+            const amountToCharge = Math.min(chargePerAd, budget - currentSpent);
+            campaignsToCharge.push({
+                id: c.id,
+                amount: amountToCharge,
+                willPauseAfter: (currentSpent + amountToCharge) >= budget
+            });
+            actualCharge += amountToCharge;
+        }
+
+        if (pausedDueToBudgetCount > 0) {
+            showNotification(`${pausedDueToBudgetCount} campaign(s) reached their budget and were paused.`, 'warning', 5000);
+            renderCampaigns('all');
+        }
+
+        if (actualCharge === 0) return;
+
+        const userBalanceRef = ref(database, 'users/' + user.uid + '/balance');
+        
         // 2. Check Balance & Deduct Atomically
         const { committed, snapshot } = await runTransaction(userBalanceRef, (currBalance) => {
             const balance = Number(currBalance) || 0;
@@ -299,15 +310,20 @@ async function processBilling() {
             renderLiveFeed();
 
         } else {
-            // Aborted: Insufficient Balance - DISPLAY EXACT BUG ON SCREEN
-            const errorMsg = `Insufficient Balance! Charge: $${actualCharge.toFixed(2)}, Available: $${currentBalance.toFixed(2)}`;
-            console.error("[Billing Debug]", errorMsg);
+            // Aborted: Insufficient Balance OR Retry Limit Exceeded
+            const serverBalance = Number(snapshot.val()) || 0;
+            const errorMsg = `Transaction Aborted! Server Balance: $${serverBalance.toFixed(2)}, Charge: $${actualCharge.toFixed(2)}`;
+            console.error("[Billing Debug]", errorMsg, "Snapshot:", snapshot.val());
             showNotification(errorMsg, 'error', 8000);
             
-            for (const camp of activeCampaigns) {
-                await update(ref(database, 'campaigns/' + camp.id), { status: 'paused' });
-                const localCamp = allCampaigns.find(c => c.id === camp.id);
-                if (localCamp) localCamp.status = 'paused';
+            // Only pause campaigns if the server balance is genuinely 0
+            if (serverBalance < actualCharge) {
+                for (const camp of activeCampaigns) {
+                    await update(ref(database, 'campaigns/' + camp.id), { status: 'paused' });
+                    const localCamp = allCampaigns.find(c => c.id === camp.id);
+                    if (localCamp) localCamp.status = 'paused';
+                }
+                renderCampaigns('all'); 
             }
             
             liveFeedData.unshift({
@@ -317,7 +333,6 @@ async function processBilling() {
                 status: errorMsg // Show exact error in table
             });
             renderLiveFeed();
-            renderCampaigns('all'); 
         }
     } catch (error) {
         // CATCH BLOCK: DISPLAY EXACT FIREBASE ERROR ON SCREEN
@@ -327,11 +342,14 @@ async function processBilling() {
         
         liveFeedData.unshift({
             time: new Date().toLocaleTimeString(),
-            campaigns: activeCampaigns.length,
-            amount: actualCharge,
+            campaigns: 'N/A',
+            amount: 0,
             status: errorMsg // Show exact crash in table
         });
         renderLiveFeed();
+    } finally {
+        // CRITICAL FIX: Always release the lock so the next 60-second cycle can run
+        isBillingInProgress = false;
     }
 }
 
