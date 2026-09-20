@@ -20,112 +20,8 @@
     <link rel="stylesheet" href="assets/css/dashboard.css">
     <link rel="stylesheet" href="assets/css/responsive.css">
 
-    <!-- CREATE AD SPECIFIC STYLES -->
-    <style>
-        .dashboard-content h1 {
-            margin-bottom: 1.5rem;
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: #1e293b;
-        }
-
-        .create-ad-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        @media (max-width: 900px) {
-            .create-ad-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .create-ad-grid .card {
-            padding: 1.5rem;
-            margin-bottom: 0;
-            height: 100%;
-            box-sizing: border-box;
-        }
-
-        .create-ad-grid .card h2 {
-            font-size: 1.125rem;
-            font-weight: 700;
-            color: #334155;
-            margin-top: 0;
-            margin-bottom: 1.25rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        /* Ad Preview Area */
-        .ad-preview-container {
-            padding: 2rem 1.5rem;
-            border: 2px dashed #cbd5e1;
-            border-radius: 0.75rem;
-            background-color: #f8fafc;
-            text-align: center;
-            min-height: 200px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #94a3b8;
-        }
-        .ad-preview-container img,
-        .ad-preview-container video {
-            max-width: 100%;
-            max-height: 200px;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-        }
-        .ad-preview-container h4 {
-            margin: 0.5rem 0 0.25rem 0;
-            color: #1e293b;
-            font-size: 1.1rem;
-        }
-        .ad-preview-container p {
-            margin: 0;
-            color: #64748b;
-            font-size: 0.9rem;
-        }
-
-        /* Make Save Button Highly Visible */
-        #save-ad-btn {
-            width: 100%;
-            padding: 1.25rem;
-            font-size: 1.1rem;
-            font-weight: 700;
-            background: #4f46e5;
-            color: #ffffff;
-            border: none;
-            border-radius: 0.75rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
-            margin-top: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-        #save-ad-btn:hover {
-            background: #4338ca;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
-        }
-        #save-ad-btn:active {
-            transform: translateY(0);
-        }
-        #save-ad-btn:disabled {
-            background: #94a3b8;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-    </style>
+    <!-- Create Ad Specific CSS -->
+    <link rel="stylesheet" href="assets/css/create-ad.css">
 </head>
 <body class="dashboard-body">
     <div class="sidebar" id="sidebar">
@@ -158,73 +54,234 @@
 
         <main class="dashboard-content">
             <h1>Create New Campaign</h1>
+            
+            <!-- Wallet / Billing Summary -->
+            <div class="card wallet-summary-card">
+                <div class="wallet-info-grid">
+                    <div class="wallet-stat">
+                        <span class="stat-label">Available Balance</span>
+                        <span class="stat-value" id="wallet-balance">$--.--</span>
+                    </div>
+                    <div class="wallet-stat">
+                        <span class="stat-label">Billing Rate</span>
+                        <span class="stat-value">$0.020 / min / ad</span>
+                    </div>
+                    <div class="wallet-stat">
+                        <span class="stat-label">Active Campaigns</span>
+                        <span class="stat-value" id="active-campaigns-count">0</span>
+                    </div>
+                    <div class="wallet-stat">
+                        <span class="stat-label">Current Billing Rate</span>
+                        <span class="stat-value" id="current-billing-rate">$0.000 / min</span>
+                    </div>
+                </div>
+                <a href="wallet.html" class="btn btn-outline">Manage Wallet</a>
+            </div>
+
             <form id="create-ad-form">
-                <div class="create-ad-grid">
-                    <div class="card">
-                        <h2>Campaign Details</h2>
-                        <div class="form-group">
-                            <label for="campaign-name">Campaign Name</label>
-                            <input type="text" id="campaign-name" required>
+                <div class="create-ad-container">
+                    <!-- LEFT COLUMN: Configuration -->
+                    <div class="create-ad-form-section">
+                        
+                        <!-- Campaign Setup -->
+                        <div class="card">
+                            <h2>Campaign Setup</h2>
+                            <div class="form-group">
+                                <label for="campaign-name">Campaign Name</label>
+                                <input type="text" id="campaign-name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="campaign-objective">Campaign Objective</label>
+                                <select id="campaign-objective" required>
+                                    <option value="">Select an objective...</option>
+                                    <option value="Website Visits">Website Visits</option>
+                                    <option value="Product Promotion">Product Promotion</option>
+                                    <option value="Brand Awareness">Brand Awareness</option>
+                                    <option value="Service Promotion">Service Promotion</option>
+                                    <option value="Social Media Promotion">Social Media Promotion</option>
+                                    <option value="App Promotion">App Promotion</option>
+                                    <option value="Event Promotion">Event Promotion</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="advertising-website">Advertising Website</label>
+                                <select id="advertising-website">
+                                    <option value="">Enter manually below...</option>
+                                </select>
+                                <input type="url" id="destination-url" placeholder="https://your-destination-url.com" required style="margin-top: 10px;">
+                                <button type="button" id="test-link-btn" class="btn btn-sm btn-outline" style="margin-top: 10px;">Test Link</button>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="start-date">Start Date</label>
+                                    <input type="date" id="start-date" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="end-date">End Date</label>
+                                    <input type="date" id="end-date" required>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="start-date">Start Date</label>
-                            <input type="date" id="start-date" required>
+
+                        <!-- Advertisement Content -->
+                        <div class="card">
+                            <h2>Advertisement Content</h2>
+                            <div class="form-group">
+                                <label for="ad-type">Ad Type</label>
+                                <select id="ad-type">
+                                    <option value="image">Image</option>
+                                    <option value="video">Video</option>
+                                    <option value="text">Text</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="brand-name">Advertiser / Brand Name</label>
+                                <input type="text" id="brand-name" placeholder="e.g. SMMARIA">
+                            </div>
+                            <div class="form-group">
+                                <label for="brand-logo">Brand Logo URL</label>
+                                <input type="url" id="brand-logo" placeholder="https://logo-url.com/logo.png">
+                            </div>
+                            <div class="form-group">
+                                <label for="brand-category">Category</label>
+                                <select id="brand-category">
+                                    <option value="Technology">Technology</option>
+                                    <option value="Fashion">Fashion</option>
+                                    <option value="Business">Business</option>
+                                    <option value="Entertainment">Entertainment</option>
+                                    <option value="Education">Education</option>
+                                    <option value="Travel">Travel</option>
+                                    <option value="Food">Food</option>
+                                    <option value="Services">Services</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="ad-title">Ad Title</label>
+                                <input type="text" id="ad-title" placeholder="e.g. Grow Your Social Media">
+                            </div>
+                            <div class="form-group">
+                                <label for="ad-description">Ad Description</label>
+                                <textarea id="ad-description" placeholder="Get more engagement and reach your audience..."></textarea>
+                            </div>
+
+                            <div class="form-group" id="image-url-group">
+                                <label for="image-url">Image URL</label>
+                                <input type="url" id="image-url" placeholder="https://image-url.com/ad.jpg">
+                            </div>
+                            <div class="form-group" id="video-url-group" style="display: none;">
+                                <label for="video-url">Video URL</label>
+                                <input type="url" id="video-url" placeholder="https://video-url.com/ad.mp4">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="ad-cta">Call To Action (CTA)</label>
+                                <select id="ad-cta">
+                                    <option value="Learn More">Learn More</option>
+                                    <option value="Visit Website">Visit Website</option>
+                                    <option value="Shop Now">Shop Now</option>
+                                    <option value="Buy Now">Buy Now</option>
+                                    <option value="Get Started">Get Started</option>
+                                    <option value="Sign Up">Sign Up</option>
+                                    <option value="Contact Us">Contact Us</option>
+                                    <option value="Book Now">Book Now</option>
+                                    <option value="Download">Download</option>
+                                    <option value="Watch Now">Watch Now</option>
+                                    <option value="Follow Us">Follow Us</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="end-date">End Date</label>
-                            <input type="date" id="end-date" required>
+
+                        <!-- Scheduling -->
+                        <div class="card">
+                            <h2>Scheduling</h2>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="start-time">Start Time</label>
+                                    <input type="time" id="start-time" value="08:00">
+                                </div>
+                                <div class="form-group">
+                                    <label for="end-time">End Time</label>
+                                    <input type="time" id="end-time" value="18:00">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Days of Week</label>
+                                <div class="day-presets">
+                                    <button type="button" class="btn btn-sm btn-outline" data-days="all">Every day</button>
+                                    <button type="button" class="btn btn-sm btn-outline" data-days="weekdays">Weekdays</button>
+                                </div>
+                                <div class="days-grid">
+                                    <label><input type="checkbox" id="day-mon" checked> Mon</label>
+                                    <label><input type="checkbox" id="day-tue" checked> Tue</label>
+                                    <label><input type="checkbox" id="day-wed" checked> Wed</label>
+                                    <label><input type="checkbox" id="day-thu" checked> Thu</label>
+                                    <label><input type="checkbox" id="day-fri" checked> Fri</label>
+                                    <label><input type="checkbox" id="day-sat"> Sat</label>
+                                    <label><input type="checkbox" id="day-sun"> Sun</label>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="total-budget">Total Budget ($)</label>
-                            <input type="number" id="total-budget" min="1" step="0.01" required>
+
+                        <!-- Tracking -->
+                        <div class="card">
+                            <h2>Tracking (UTM)</h2>
+                            <div class="form-group">
+                                <label for="utm-source">UTM Source</label>
+                                <input type="text" id="utm-source" value="maria_ads">
+                            </div>
+                            <div class="form-group">
+                                <label for="utm-medium">UTM Medium</label>
+                                <input type="text" id="utm-medium" value="paid_ad">
+                            </div>
+                            <div class="form-group">
+                                <label for="utm-campaign">UTM Campaign</label>
+                                <input type="text" id="utm-campaign" placeholder="e.g. summer_launch">
+                            </div>
+                            <div class="form-group">
+                                <label for="utm-content">UTM Content</label>
+                                <input type="text" id="utm-content" placeholder="e.g. banner_sidebar">
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="daily-budget">Daily Budget ($)</label>
-                            <input type="number" id="daily-budget" min="1" step="0.01" required>
-                        </div>
+
                     </div>
 
-                    <div class="card">
-                        <h2>Advertisement</h2>
-                        <div class="form-group">
-                            <label for="ad-type">Ad Type</label>
-                            <select id="ad-type">
-                                <option value="image">Image</option>
-                                <option value="video">Video</option>
-                                <option value="text">Text</option>
-                            </select>
+                    <!-- RIGHT COLUMN: Preview & Quality -->
+                    <div class="create-ad-preview-section">
+                        
+                        <!-- Ad Quality Indicator -->
+                        <div class="card quality-card">
+                            <h2>Ad Quality</h2>
+                            <div class="quality-progress-container">
+                                <div class="quality-progress-bar" id="quality-progress-bar" style="width: 0%;"></div>
+                            </div>
+                            <div id="quality-checks" class="quality-checks-list"></div>
                         </div>
-                        <div class="form-group">
-                            <label for="ad-title">Title</label>
-                            <input type="text" id="ad-title">
+
+                        <!-- Live Preview -->
+                        <div class="card preview-card-sticky">
+                            <div class="preview-header">
+                                <h2>Live Preview</h2>
+                                <div class="preview-modes">
+                                    <button type="button" class="btn btn-sm active" data-mode="desktop">Desktop</button>
+                                    <button type="button" class="btn btn-sm" data-mode="mobile">Mobile</button>
+                                </div>
+                            </div>
+                            <div id="ad-preview-area" class="ad-preview-container desktop-preview">
+                                <!-- Preview dynamically injected here -->
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="ad-description">Description</label>
-                            <textarea id="ad-description"></textarea>
-                        </div>
-                        <div class="form-group" id="image-url-group">
-                            <label for="image-url">Image URL</label>
-                            <input type="url" id="image-url" placeholder="https://...">
-                        </div>
-                        <div class="form-group" id="video-url-group" style="display: none;">
-                            <label for="video-url">Video URL</label>
-                            <input type="url" id="video-url" placeholder="https://...">
-                        </div>
-                        <div class="form-group">
-                            <label for="destination-url">Destination URL</label>
-                            <input type="url" id="destination-url" required placeholder="https://...">
-                        </div>
+
                     </div>
                 </div>
 
-                <div class="card" style="margin-bottom: 1.5rem;">
-                    <h2 style="font-size: 1.125rem; font-weight: 700; color: #334155; margin-top: 0; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0;">Preview</h2>
-                    <div id="ad-preview-area" class="ad-preview-container">
-                        <p>Fill out the form to see a preview.</p>
-                    </div>
+                <div class="form-actions">
+                    <button type="button" id="save-draft-btn" class="btn btn-secondary">Save Draft</button>
+                    <button type="submit" id="create-campaign-btn" class="btn btn-primary">Create Campaign</button>
                 </div>
-
-                <button type="submit" class="btn btn-lg" id="save-ad-btn">Save Campaign</button>
             </form>
         </main>
     </div>
