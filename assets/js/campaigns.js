@@ -5,6 +5,8 @@ import { showNotification } from './notifications.js';
 import { showModal } from './modal.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+console.log('Campaigns.js loaded - Safe Billing Engine v2');
+
 let allCampaigns = [];
 
 // Billing State Variables
@@ -18,6 +20,7 @@ async function loadCampaigns() {
     if (!user) return;
 
     const tbody = document.getElementById('campaigns-tbody');
+    if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="10" class="text-center">Loading campaigns...</td></tr>';
 
     try {
@@ -53,6 +56,7 @@ function setupFilters() {
 
 function renderCampaigns(filter) {
     const tbody = document.getElementById('campaigns-tbody');
+    if (!tbody) return;
     tbody.innerHTML = '';
 
     const filtered = filter === 'all' ? allCampaigns : allCampaigns.filter(c => c.status === filter);
@@ -84,7 +88,6 @@ function renderCampaigns(filter) {
         tbody.appendChild(tr);
     });
 
-    // Attach action listeners
     tbody.querySelectorAll('button[data-action]').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const action = e.target.getAttribute('data-action');
@@ -112,7 +115,7 @@ function handleCampaignAction(id, action) {
                     await update(ref(database, 'campaigns/' + id), { status: newStatus });
                     showNotification(`Campaign ${actionText}d!`, 'success');
                     close();
-                    loadCampaigns(); // Refresh list
+                    loadCampaigns();
                 } catch (error) {
                     showNotification('Failed to update campaign.', 'error');
                 }
@@ -127,7 +130,9 @@ function handleCampaignAction(id, action) {
 
 function startBillingEngine() {
     if (billingInterval) clearInterval(billingInterval);
-    // Run every 60 seconds
+    // Run immediately on start
+    processBilling();
+    // Then run every 60 seconds
     billingInterval = setInterval(processBilling, 60000);
 }
 
@@ -145,11 +150,13 @@ function updateLiveFeed(status, message, amount) {
     if (feedElement) {
         const item = document.createElement('div');
         item.className = `feed-item feed-${status.toLowerCase().replace(/\s+/g, '-')}`;
+        item.style.padding = '8px';
+        item.style.borderBottom = '1px solid #eee';
         item.innerHTML = `
-            <span class="feed-time">${new Date().toLocaleTimeString()}</span>
-            <span class="feed-status">${status}</span>
+            <span class="feed-time" style="font-size: 12px; color: #666; margin-right: 10px;">${new Date().toLocaleTimeString()}</span>
+            <span class="feed-status" style="font-weight: bold; margin-right: 10px;">${status}</span>
             <span class="feed-message">${message}</span>
-            ${amount !== 0 ? `<span class="feed-amount">${formatCurrency(amount)}</span>` : ''}
+            ${amount !== 0 ? `<span class="feed-amount" style="float: right; font-weight: bold;">${formatCurrency(amount)}</span>` : ''}
         `;
         feedElement.prepend(item);
     }
@@ -166,7 +173,6 @@ async function processBilling() {
         return;
     }
 
-    // STEP 1 — AUTHENTICATION
     const user = auth.currentUser;
     if (!user) {
         console.log('[Billing Debug] No authenticated user. Billing stopped.');
@@ -175,10 +181,9 @@ async function processBilling() {
     }
 
     isBillingInProgress = true;
-    console.log(`[Billing Debug] User UID: ${user.uid}`);
+    console.log(`[Billing Debug] Billing cycle started for user: ${user.uid}`);
 
     try {
-        // STEP 2 — READ THE WALLET BALANCE
         const balanceRef = ref(database, 'users/' + user.uid + '/balance');
         const balanceSnap = await get(balanceRef);
         
@@ -187,21 +192,20 @@ async function processBilling() {
         
         if (balanceVal === null || balanceVal === undefined) {
             console.log('[Billing Debug] Wallet balance is null/undefined. Skipping billing.');
-            updateLiveFeed('Billing skipped - balance could not be confirmed', 'Unable to verify wallet balance. Billing was skipped.', 0);
+            updateLiveFeed('Billing skipped', 'Unable to verify wallet balance. Billing was skipped.', 0);
             return;
         }
         
         const parsedBalance = Number(balanceVal);
         if (isNaN(parsedBalance)) {
             console.log('[Billing Debug] Wallet balance is not a valid number. Skipping billing.');
-            updateLiveFeed('Billing skipped - balance could not be confirmed', 'Unable to verify wallet balance. Billing was skipped.', 0);
+            updateLiveFeed('Billing skipped', 'Unable to verify wallet balance. Billing was skipped.', 0);
             return;
         }
         
         currentBalance = parsedBalance;
         console.log(`[Billing Debug] Balance before transaction: ${currentBalance}`);
 
-        // STEP 3 — DETERMINE CAMPAIGNS THAT SHOULD BE BILLED
         const chargePerAd = 0.020;
         let campaignsToCharge = [];
         let actualCharge = 0;
@@ -218,7 +222,7 @@ async function processBilling() {
                 if (remainingBudget <= 0) {
                     await update(ref(database, 'campaigns/' + camp.id), { status: 'paused' });
                     camp.status = 'paused';
-                    console.log(`[Billing Debug] Campaign ${camp.id} paused due to budget exhaustion.`);
+                    updateLiveFeed('Budget Exhausted', `Campaign ${camp.name} paused due to budget exhaustion.`, 0);
                 } else {
                     const amountToCharge = Math.min(chargePerAd, remainingBudget);
                     campaignsToCharge.push({ camp, amountToCharge });
@@ -229,10 +233,9 @@ async function processBilling() {
             }
         }
 
-        actualCharge = Math.round(actualCharge * 100) / 100; // Fix float precision
-        console.log(`[Billing Debug] Actual charge: ${actualCharge}`);
+        actualCharge = Math.round(actualCharge * 100) / 100;
+        console.log(`[Billing Debug] Calculated charge: ${actualCharge}`);
 
-        // STEP 4 — HANDLE INSUFFICIENT FUNDS BEFORE RESUMING ADS
         if (pausedCampaigns.length > 0 && currentBalance > actualCharge) {
             let potentialCharge = actualCharge;
             for (const camp of pausedCampaigns) {
@@ -248,7 +251,7 @@ async function processBilling() {
                         campaignsToCharge.push({ camp, amountToCharge });
                         actualCharge += amountToCharge;
                         potentialCharge = actualCharge;
-                        console.log(`[Billing Debug] Campaign ${camp.id} auto-resumed due to sufficient balance.`);
+                        updateLiveFeed('Auto-Resumed', `Campaign ${camp.name} resumed due to sufficient balance.`, 0);
                     }
                 }
             }
@@ -257,6 +260,7 @@ async function processBilling() {
 
         if (campaignsToCharge.length === 0) {
             console.log('[Billing Debug] No campaigns to charge.');
+            updateLiveFeed('Idle', 'No active campaigns to bill.', 0);
             return;
         }
 
@@ -265,48 +269,32 @@ async function processBilling() {
             return;
         }
 
-        // STEP 5 — ATOMIC BALANCE DEDUCTION
         console.log(`[Billing Debug] Wallet path: users/${user.uid}/balance`);
         
         const { committed, snapshot } = await runTransaction(balanceRef, (currBalance) => {
             console.log(`[Billing Debug] Transaction callback balance: ${currBalance}`);
             
-            if (currBalance === null || currBalance === undefined) {
-                console.log('[Billing Debug] Transaction aborted: balance is null/undefined.');
-                return; // abort safely
-            }
-            
+            if (currBalance === null || currBalance === undefined) return;
             const balance = Number(currBalance);
-            if (isNaN(balance)) {
-                console.log('[Billing Debug] Transaction aborted: balance is NaN.');
-                return; // abort safely
-            }
-            
-            if (balance < actualCharge) {
-                console.log('[Billing Debug] Transaction aborted: insufficient funds.');
-                return; // abort because funds are genuinely insufficient
-            }
-            
+            if (isNaN(balance)) return;
+            if (balance < actualCharge) return;
             return balance - actualCharge;
         });
 
         console.log(`[Billing Debug] Transaction committed: ${committed}`);
         console.log(`[Billing Debug] Final transaction snapshot: ${snapshot.val()}`);
 
-        // STEP 6 — TRANSACTION RESULT HANDLING
         if (committed === true) {
             totalBilledThisSession += actualCharge;
             const newBalance = Number(snapshot.val());
             
             console.log(`[Billing Debug] Deduction successful. New balance: ${newBalance}`);
             
-            // Update totalSpent atomically
             const totalSpentRef = ref(database, 'users/' + user.uid + '/totalSpent');
             await runTransaction(totalSpentRef, (curr) => {
                 return (Number(curr) || 0) + actualCharge;
             });
 
-            // Create transaction record
             const transactionsRef = ref(database, 'transactions');
             const newTransactionRef = push(transactionsRef);
             await set(newTransactionRef, {
@@ -317,7 +305,6 @@ async function processBilling() {
                 createdAt: Date.now()
             });
 
-            // Update campaign spent and pause if budget exhausted
             for (const { camp, amountToCharge } of campaignsToCharge) {
                 const campRef = ref(database, 'campaigns/' + camp.id);
                 const newSpent = (Number(camp.spent) || 0) + amountToCharge;
@@ -335,17 +322,15 @@ async function processBilling() {
                 camp.spent = newSpent;
             }
 
-            updateLiveFeed('Success', `Charged ${formatCurrency(actualCharge)}. New Balance: ${formatCurrency(newBalance)}`, -actualCharge);
-            renderCampaigns('all'); // Refresh UI
+            updateLiveFeed('Success', `Charged for ${campaignsToCharge.length} ad(s). New Balance: ${formatCurrency(newBalance)}`, -actualCharge);
+            renderCampaigns('all');
 
         } else {
-            // committed === false
             const val = snapshot.val();
             
             if (val !== null && val !== undefined) {
                 const serverBalance = Number(val);
                 if (!isNaN(serverBalance) && serverBalance < actualCharge) {
-                    // A. Genuine insufficient funds
                     console.log('[Billing Debug] Pausing active campaigns due to genuine insufficient funds.');
                     for (const { camp } of campaignsToCharge) {
                         await update(ref(database, 'campaigns/' + camp.id), { status: 'paused' });
@@ -354,14 +339,12 @@ async function processBilling() {
                     updateLiveFeed('Insufficient balance', `Insufficient wallet balance. Required: ${formatCurrency(actualCharge)}, Available: ${formatCurrency(serverBalance)}`, 0);
                     renderCampaigns('all');
                 } else {
-                    // B. Ambiguous failure
                     console.log('[Billing Debug] Ambiguous transaction failure. Not pausing campaigns.');
-                    updateLiveFeed('Billing skipped - balance could not be confirmed', 'Billing transaction did not commit. Campaigns were not paused because the wallet balance could not be confirmed.', 0);
+                    updateLiveFeed('Billing skipped', 'Billing transaction did not commit. Campaigns were not paused.', 0);
                 }
             } else {
-                // B. Ambiguous failure - balance is null/undefined
                 console.log('[Billing Debug] Ambiguous transaction failure (null/undefined snapshot). Not pausing campaigns.');
-                updateLiveFeed('Billing skipped - balance could not be confirmed', 'Billing transaction did not commit. Campaigns were not paused because the wallet balance could not be confirmed.', 0);
+                updateLiveFeed('Billing skipped', 'Billing transaction did not commit. Campaigns were not paused.', 0);
             }
         }
 
