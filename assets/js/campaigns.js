@@ -1,27 +1,50 @@
 import { auth, database } from './firebase.js';
-import { ref, get, query, orderByChild, equalTo, update, runTransaction, set, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { ref, get, query, orderByChild, equalTo, update, remove, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { formatCurrency, formatDate, escapeHtml, calculateCTR } from './helpers.js';
 import { showNotification } from './notifications.js';
 import { showModal } from './modal.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-console.log('Campaigns.js loaded - Safe Billing Engine v2');
-
 let allCampaigns = [];
+let filteredCampaigns = [];
+let currentPage = 1;
+const itemsPerPage = 10;
 
-// Billing State Variables
-let isBillingInProgress = false;
-let billingInterval = null;
-let totalBilledThisSession = 0;
-let liveFeedData = [];
+// ==========================================
+// INITIALIZATION
+// ==========================================
+
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        loadCampaigns();
+        setupEventListeners();
+    } else {
+        window.location.href = 'login.html';
+    }
+});
+
+function setupEventListeners() {
+    document.getElementById('search-input').addEventListener('input', applyFilters);
+    document.getElementById('status-filter').addEventListener('change', applyFilters);
+    document.getElementById('objective-filter').addEventListener('change', applyFilters);
+    document.getElementById('type-filter').addEventListener('change', applyFilters);
+    document.getElementById('sort-filter').addEventListener('change', applyFilters);
+    document.getElementById('refresh-btn').addEventListener('click', loadCampaigns);
+}
+
+// ==========================================
+// DATA LOADING
+// ==========================================
 
 async function loadCampaigns() {
     const user = auth.currentUser;
     if (!user) return;
 
     const tbody = document.getElementById('campaigns-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="10" class="text-center">Loading campaigns...</td></tr>';
+    const cardsContainer = document.getElementById('campaigns-cards-container');
+    
+    tbody.innerHTML = `<tr><td colspan="10" class="text-center">Loading campaigns...</td></tr>`;
+    cardsContainer.innerHTML = `<div class="text-center p-2">Loading campaigns...</div>`;
 
     try {
         const campaignsRef = ref(database, 'campaigns');
@@ -30,337 +53,407 @@ async function loadCampaigns() {
 
         if (snapshot.exists()) {
             allCampaigns = Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data }));
-            renderCampaigns('all');
-            setupFilters();
+            renderStats(allCampaigns);
+            applyFilters();
         } else {
             allCampaigns = [];
-            tbody.innerHTML = '<tr><td colspan="10" class="text-center">No campaigns found. <a href="create-ad.html">Create one!</a></td></tr>';
+            renderStats(allCampaigns);
+            showEmptyState();
         }
     } catch (error) {
         console.error("Error fetching campaigns:", error);
-        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error loading campaigns.</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center text-danger">Error loading campaigns.</td></tr>`;
+        cardsContainer.innerHTML = `<div class="text-center text-danger p-2">Error loading campaigns.</div>`;
+        showNotification('Failed to load campaigns.', 'error');
     }
 }
 
-function setupFilters() {
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    filterBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            filterBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            const filter = btn.getAttribute('data-filter');
-            renderCampaigns(filter);
-        });
-    });
+function renderStats(camps) {
+    document.getElementById('stat-total').textContent = camps.length;
+    document.getElementById('stat-active').textContent = camps.filter(c => c.status === 'active').length;
+    document.getElementById('stat-paused').textContent = camps.filter(c => c.status === 'paused').length;
+    
+    const totalSpent = camps.reduce((sum, c) => sum + (Number(c.spent) || 0), 0);
+    document.getElementById('stat-spent').textContent = formatCurrency(totalSpent);
 }
 
-function renderCampaigns(filter) {
+// ==========================================
+// FILTERING & SORTING
+// ==========================================
+
+function applyFilters() {
+    const searchTerm = document.getElementById('search-input').value.toLowerCase();
+    const status = document.getElementById('status-filter').value;
+    const objective = document.getElementById('objective-filter').value;
+    const type = document.getElementById('type-filter').value;
+    const sortBy = document.getElementById('sort-filter').value;
+
+    filteredCampaigns = allCampaigns.filter(c => {
+        // Search
+        const matchesSearch = !searchTerm || 
+            (c.name && c.name.toLowerCase().includes(searchTerm)) ||
+            (c.objective && c.objective.toLowerCase().includes(searchTerm)) ||
+            (c.destinationUrl && c.destinationUrl.toLowerCase().includes(searchTerm)) ||
+            (c.id && c.id.toLowerCase().includes(searchTerm));
+
+        // Filters
+        const matchesStatus = status === 'all' || c.status === status;
+        const matchesObjective = objective === 'all' || c.objective === objective;
+        const matchesType = type === 'all' || c.adType === type;
+
+        return matchesSearch && matchesStatus && matchesObjective && matchesType;
+    });
+
+    // Sorting
+    switch(sortBy) {
+        case 'oldest': filteredCampaigns.sort((a,b) => (a.createdAt||0) - (b.createdAt||0)); break;
+        case 'name-az': filteredCampaigns.sort((a,b) => (a.name||'').localeCompare(b.name||'')); break;
+        case 'name-za': filteredCampaigns.sort((a,b) => (b.name||'').localeCompare(a.name||'')); break;
+        case 'impressions': filteredCampaigns.sort((a,b) => (b.impressions||0) - (a.impressions||0)); break;
+        case 'clicks': filteredCampaigns.sort((a,b) => (b.clicks||0) - (a.clicks||0)); break;
+        case 'spent': filteredCampaigns.sort((a,b) => (b.spent||0) - (a.spent||0)); break;
+        default: filteredCampaigns.sort((a,b) => (b.createdAt||0) - (a.createdAt||0)); // newest
+    }
+
+    currentPage = 1;
+    renderCampaigns();
+}
+
+// ==========================================
+// RENDERING
+// ==========================================
+
+function renderCampaigns() {
+    const totalItems = filteredCampaigns.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedItems = filteredCampaigns.slice(startIndex, startIndex + itemsPerPage);
+
     const tbody = document.getElementById('campaigns-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
+    const cardsContainer = document.getElementById('campaigns-cards-container');
 
-    const filtered = filter === 'all' ? allCampaigns : allCampaigns.filter(c => c.status === filter);
-
-    if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="text-center">No ${filter} campaigns.</td></tr>`;
+    if (totalItems === 0) {
+        showEmptyState();
+        renderPagination(0);
         return;
     }
 
-    filtered.forEach(c => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${escapeHtml(c.name)}</td>
-            <td><span class="status-badge status-${c.status}">${c.status}</span></td>
-            <td>${formatCurrency(c.budget)}</td>
-            <td>${formatCurrency(c.spent)}</td>
-            <td>${c.impressions || 0}</td>
-            <td>${c.clicks || 0}</td>
-            <td>${calculateCTR(c.clicks || 0, c.impressions || 0)}</td>
-            <td>${formatDate(c.startDate)}</td>
-            <td>${formatDate(c.endDate)}</td>
-            <td>
-                ${c.status === 'active' 
-                    ? `<button class="btn btn-sm btn-warning" data-action="pause" data-id="${c.id}">Pause</button>`
-                    : `<button class="btn btn-sm btn-success" data-action="activate" data-id="${c.id}">Activate</button>`
-                }
-            </td>
+    // Desktop Table
+    tbody.innerHTML = paginatedItems.map(c => {
+        const impressions = c.impressions || 0;
+        const clicks = c.clicks || 0;
+        const ctr = calculateCTR(clicks, impressions);
+        const spent = formatCurrency(c.spent || 0);
+        const schedule = `${formatDate(c.startDate)} - ${formatDate(c.endDate)}`;
+        const statusBadge = `<span class="status-badge status-${c.status || 'draft'}">${c.status || 'draft'}</span>`;
+        const actions = `
+            <button class="action-btn" onclick="window.viewCampaign('${c.id}')">View</button>
+            ${c.status === 'active' ? `<button class="action-btn" onclick="window.pauseCampaign('${c.id}')">Pause</button>` : ''}
+            ${c.status === 'paused' ? `<button class="action-btn" onclick="window.resumeCampaign('${c.id}')">Resume</button>` : ''}
+            ${c.status === 'draft' || c.status === 'pending' ? `<button class="action-btn danger" onclick="window.deleteCampaign('${c.id}')">Delete</button>` : ''}
         `;
-        tbody.appendChild(tr);
-    });
 
-    tbody.querySelectorAll('button[data-action]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const action = e.target.getAttribute('data-action');
-            const id = e.target.getAttribute('data-id');
-            handleCampaignAction(id, action);
-        });
-    });
+        return `
+            <tr>
+                <td><strong>${escapeHtml(c.name || 'Unnamed')}</strong></td>
+                <td>${statusBadge}</td>
+                <td>${escapeHtml(c.objective || 'N/A')}</td>
+                <td>${escapeHtml(c.adType || 'N/A')}</td>
+                <td>${impressions.toLocaleString()}</td>
+                <td>${clicks.toLocaleString()}</td>
+                <td>${ctr}%</td>
+                <td>${spent}</td>
+                <td>${schedule}</td>
+                <td>${actions}</td>
+            </tr>
+        `;
+    }).join('');
+
+    // Mobile Cards
+    cardsContainer.innerHTML = paginatedItems.map(c => {
+        const impressions = c.impressions || 0;
+        const clicks = c.clicks || 0;
+        const ctr = calculateCTR(clicks, impressions);
+        const spent = formatCurrency(c.spent || 0);
+        const statusBadge = `<span class="status-badge status-${c.status || 'draft'}">${c.status || 'draft'}</span>`;
+        
+        return `
+            <div class="mobile-card">
+                <div class="mobile-card-header">
+                    <h3>${escapeHtml(c.name || 'Unnamed')}</h3>
+                    ${statusBadge}
+                </div>
+                <div class="mobile-card-stats">
+                    <span>Impressions: ${impressions.toLocaleString()}</span>
+                    <span>Clicks: ${clicks.toLocaleString()}</span>
+                    <span>CTR: ${ctr}%</span>
+                    <span>Spent: ${spent}</span>
+                    <span>Type: ${escapeHtml(c.adType || 'N/A')}</span>
+                    <span>Obj: ${escapeHtml(c.objective || 'N/A')}</span>
+                </div>
+                <div class="mobile-card-actions">
+                    <button class="btn btn-sm btn-outline" onclick="window.viewCampaign('${c.id}')">View</button>
+                    ${c.status === 'active' ? `<button class="btn btn-sm btn-warning" onclick="window.pauseCampaign('${c.id}')">Pause</button>` : ''}
+                    ${c.status === 'paused' ? `<button class="btn btn-sm btn-success" onclick="window.resumeCampaign('${c.id}')">Resume</button>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    renderPagination(totalPages);
 }
 
-function handleCampaignAction(id, action) {
-    const newStatus = action === 'pause' ? 'paused' : 'active';
-    const actionText = action === 'pause' ? 'Pause' : 'Activate';
+function renderPagination(totalPages) {
+    const container = document.getElementById('pagination-controls');
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
 
-    showModal(`Confirm ${actionText}`, `<p>Are you sure you want to ${actionText} this campaign?</p>`, [
-        {
-            label: 'Cancel',
-            class: 'btn-secondary',
-            onClick: (modal, close) => close()
-        },
-        {
-            label: actionText,
-            class: action === 'pause' ? 'btn-warning' : 'btn-success',
-            onClick: async (modal, close) => {
-                try {
-                    await update(ref(database, 'campaigns/' + id), { status: newStatus });
-                    showNotification(`Campaign ${actionText}d!`, 'success');
-                    close();
-                    loadCampaigns();
-                } catch (error) {
-                    showNotification('Failed to update campaign.', 'error');
-                }
-            }
+    let html = '';
+    // Previous button
+    html += `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="window.changePage(${currentPage - 1})">&laquo;</button>`;
+
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+        html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="window.changePage(${i})">${i}</button>`;
+    }
+
+    // Next button
+    html += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="window.changePage(${currentPage + 1})">&raquo;</button>`;
+
+    container.innerHTML = html;
+}
+
+function showEmptyState() {
+    const html = `
+        <div class="text-center p-4">
+            <h3>No campaigns found</h3>
+            <p class="text-muted">Create your first advertisement and start reaching your audience.</p>
+            <a href="create-ad.html" class="btn btn-primary mt-2">Create Your First Campaign</a>
+        </div>
+    `;
+    document.getElementById('campaigns-tbody').innerHTML = `<tr><td colspan="10">${html}</td></tr>`;
+    document.getElementById('campaigns-cards-container').innerHTML = html;
+}
+
+// ==========================================
+// CAMPAIGN ACTIONS
+// ==========================================
+
+window.changePage = function(page) {
+    currentPage = page;
+    renderCampaigns();
+};
+
+window.pauseCampaign = async function(id) {
+    confirmAction('Pause Campaign', 'Are you sure you want to pause this campaign?', async () => {
+        try {
+            await update(ref(database, 'campaigns/' + id), { status: 'paused' });
+            showNotification('Campaign paused successfully.', 'success');
+            loadCampaigns();
+        } catch (error) {
+            console.error('Error pausing campaign:', error);
+            showNotification('Failed to pause campaign.', 'error');
         }
-    ]);
-}
+    });
+};
 
-// ==========================================
-// BILLING ENGINE
-// ==========================================
+window.resumeCampaign = async function(id) {
+    confirmAction('Resume Campaign', 'Are you sure you want to resume this campaign?', async () => {
+        try {
+            await update(ref(database, 'campaigns/' + id), { status: 'active' });
+            showNotification('Campaign resumed successfully.', 'success');
+            loadCampaigns();
+        } catch (error) {
+            console.error('Error resuming campaign:', error);
+            showNotification('Failed to resume campaign.', 'error');
+        }
+    });
+};
 
-function startBillingEngine() {
-    if (billingInterval) clearInterval(billingInterval);
-    // Run immediately on start
-    processBilling();
-    // Then run every 60 seconds
-    billingInterval = setInterval(processBilling, 60000);
-}
+window.deleteCampaign = async function(id) {
+    confirmAction('Delete Campaign', 'Warning: This campaign will be permanently removed.', async () => {
+        try {
+            await remove(ref(database, 'campaigns/' + id));
+            showNotification('Campaign deleted.', 'success');
+            loadCampaigns();
+        } catch (error) {
+            console.error('Error deleting campaign:', error);
+            showNotification('Failed to delete campaign.', 'error');
+        }
+    });
+};
 
-function stopBillingEngine() {
-    if (billingInterval) {
-        clearInterval(billingInterval);
-        billingInterval = null;
-    }
-}
-
-function updateLiveFeed(status, message, amount) {
-    liveFeedData.push({ status, message, amount, timestamp: Date.now() });
-    
-    const feedElement = document.getElementById('live-billing-feed');
-    if (feedElement) {
-        const item = document.createElement('div');
-        item.className = `feed-item feed-${status.toLowerCase().replace(/\s+/g, '-')}`;
-        item.style.padding = '8px';
-        item.style.borderBottom = '1px solid #eee';
-        item.innerHTML = `
-            <span class="feed-time" style="font-size: 12px; color: #666; margin-right: 10px;">${new Date().toLocaleTimeString()}</span>
-            <span class="feed-status" style="font-weight: bold; margin-right: 10px;">${status}</span>
-            <span class="feed-message">${message}</span>
-            ${amount !== 0 ? `<span class="feed-amount" style="float: right; font-weight: bold;">${formatCurrency(amount)}</span>` : ''}
-        `;
-        feedElement.prepend(item);
-    }
-    
-    const totalElement = document.getElementById('total-billed-session');
-    if (totalElement) {
-        totalElement.textContent = formatCurrency(totalBilledThisSession);
-    }
-}
-
-async function processBilling() {
-    if (isBillingInProgress) {
-        console.log('[Billing Debug] Billing already in progress, skipping cycle.');
-        return;
-    }
-
-    const user = auth.currentUser;
-    if (!user) {
-        console.log('[Billing Debug] No authenticated user. Billing stopped.');
-        stopBillingEngine();
-        return;
-    }
-
-    isBillingInProgress = true;
-    console.log(`[Billing Debug] Billing cycle started for user: ${user.uid}`);
+window.duplicateCampaign = async function(id) {
+    const camp = allCampaigns.find(c => c.id === id);
+    if (!camp) return;
 
     try {
-        const balanceRef = ref(database, 'users/' + user.uid + '/balance');
-        const balanceSnap = await get(balanceRef);
+        const newCampaignRef = push(ref(database, 'campaigns'));
+        const { id: oldId, ...campData } = camp;
         
-        let currentBalance;
-        const balanceVal = balanceSnap.val();
-        
-        if (balanceVal === null || balanceVal === undefined) {
-            console.log('[Billing Debug] Wallet balance is null/undefined. Skipping billing.');
-            updateLiveFeed('Billing skipped', 'Unable to verify wallet balance. Billing was skipped.', 0);
-            return;
-        }
-        
-        const parsedBalance = Number(balanceVal);
-        if (isNaN(parsedBalance)) {
-            console.log('[Billing Debug] Wallet balance is not a valid number. Skipping billing.');
-            updateLiveFeed('Billing skipped', 'Unable to verify wallet balance. Billing was skipped.', 0);
-            return;
-        }
-        
-        currentBalance = parsedBalance;
-        console.log(`[Billing Debug] Balance before transaction: ${currentBalance}`);
+        const duplicateData = {
+            ...campData,
+            name: `${camp.name} (Copy)`,
+            status: 'draft',
+            spent: 0,
+            impressions: 0,
+            clicks: 0,
+            createdAt: Date.now()
+        };
 
-        const chargePerAd = 0.020;
-        let campaignsToCharge = [];
-        let actualCharge = 0;
-        let pausedCampaigns = [];
-
-        for (const camp of allCampaigns) {
-            if (camp.advertiserId !== user.uid) continue;
-
-            const budget = Number(camp.budget) || 0;
-            const currentSpent = Number(camp.spent) || 0;
-            const remainingBudget = budget - currentSpent;
-
-            if (camp.status === 'active') {
-                if (remainingBudget <= 0) {
-                    await update(ref(database, 'campaigns/' + camp.id), { status: 'paused' });
-                    camp.status = 'paused';
-                    updateLiveFeed('Budget Exhausted', `Campaign ${camp.name} paused due to budget exhaustion.`, 0);
-                } else {
-                    const amountToCharge = Math.min(chargePerAd, remainingBudget);
-                    campaignsToCharge.push({ camp, amountToCharge });
-                    actualCharge += amountToCharge;
-                }
-            } else if (camp.status === 'paused' || camp.status === 'pending') {
-                pausedCampaigns.push(camp);
-            }
-        }
-
-        actualCharge = Math.round(actualCharge * 100) / 100;
-        console.log(`[Billing Debug] Calculated charge: ${actualCharge}`);
-
-        if (pausedCampaigns.length > 0 && currentBalance > actualCharge) {
-            let potentialCharge = actualCharge;
-            for (const camp of pausedCampaigns) {
-                const budget = Number(camp.budget) || 0;
-                const currentSpent = Number(camp.spent) || 0;
-                const remainingBudget = budget - currentSpent;
-                
-                if (remainingBudget > 0) {
-                    let amountToCharge = Math.min(chargePerAd, remainingBudget);
-                    if (currentBalance >= potentialCharge + amountToCharge) {
-                        await update(ref(database, 'campaigns/' + camp.id), { status: 'active' });
-                        camp.status = 'active';
-                        campaignsToCharge.push({ camp, amountToCharge });
-                        actualCharge += amountToCharge;
-                        potentialCharge = actualCharge;
-                        updateLiveFeed('Auto-Resumed', `Campaign ${camp.name} resumed due to sufficient balance.`, 0);
-                    }
-                }
-            }
-            actualCharge = Math.round(actualCharge * 100) / 100;
-        }
-
-        if (campaignsToCharge.length === 0) {
-            console.log('[Billing Debug] No campaigns to charge.');
-            updateLiveFeed('Idle', 'No active campaigns to bill.', 0);
-            return;
-        }
-
-        if (actualCharge <= 0) {
-            console.log('[Billing Debug] Actual charge is 0. No billing needed.');
-            return;
-        }
-
-        console.log(`[Billing Debug] Wallet path: users/${user.uid}/balance`);
-        
-        const { committed, snapshot } = await runTransaction(balanceRef, (currBalance) => {
-            console.log(`[Billing Debug] Transaction callback balance: ${currBalance}`);
-            
-            if (currBalance === null || currBalance === undefined) return;
-            const balance = Number(currBalance);
-            if (isNaN(balance)) return;
-            if (balance < actualCharge) return;
-            return balance - actualCharge;
-        });
-
-        console.log(`[Billing Debug] Transaction committed: ${committed}`);
-        console.log(`[Billing Debug] Final transaction snapshot: ${snapshot.val()}`);
-
-        if (committed === true) {
-            totalBilledThisSession += actualCharge;
-            const newBalance = Number(snapshot.val());
-            
-            console.log(`[Billing Debug] Deduction successful. New balance: ${newBalance}`);
-            
-            const totalSpentRef = ref(database, 'users/' + user.uid + '/totalSpent');
-            await runTransaction(totalSpentRef, (curr) => {
-                return (Number(curr) || 0) + actualCharge;
-            });
-
-            const transactionsRef = ref(database, 'transactions');
-            const newTransactionRef = push(transactionsRef);
-            await set(newTransactionRef, {
-                type: 'ad_spending',
-                amount: -actualCharge,
-                status: 'completed',
-                userId: user.uid,
-                createdAt: Date.now()
-            });
-
-            for (const { camp, amountToCharge } of campaignsToCharge) {
-                const campRef = ref(database, 'campaigns/' + camp.id);
-                const newSpent = (Number(camp.spent) || 0) + amountToCharge;
-                const updateData = { spent: newSpent };
-                
-                const budget = Number(camp.budget) || 0;
-                if (newSpent >= budget) {
-                    updateData.status = 'paused';
-                    camp.status = 'paused';
-                } else {
-                    camp.status = 'active';
-                }
-                
-                await update(campRef, updateData);
-                camp.spent = newSpent;
-            }
-
-            updateLiveFeed('Success', `Charged for ${campaignsToCharge.length} ad(s). New Balance: ${formatCurrency(newBalance)}`, -actualCharge);
-            renderCampaigns('all');
-
-        } else {
-            const val = snapshot.val();
-            
-            if (val !== null && val !== undefined) {
-                const serverBalance = Number(val);
-                if (!isNaN(serverBalance) && serverBalance < actualCharge) {
-                    console.log('[Billing Debug] Pausing active campaigns due to genuine insufficient funds.');
-                    for (const { camp } of campaignsToCharge) {
-                        await update(ref(database, 'campaigns/' + camp.id), { status: 'paused' });
-                        camp.status = 'paused';
-                    }
-                    updateLiveFeed('Insufficient balance', `Insufficient wallet balance. Required: ${formatCurrency(actualCharge)}, Available: ${formatCurrency(serverBalance)}`, 0);
-                    renderCampaigns('all');
-                } else {
-                    console.log('[Billing Debug] Ambiguous transaction failure. Not pausing campaigns.');
-                    updateLiveFeed('Billing skipped', 'Billing transaction did not commit. Campaigns were not paused.', 0);
-                }
-            } else {
-                console.log('[Billing Debug] Ambiguous transaction failure (null/undefined snapshot). Not pausing campaigns.');
-                updateLiveFeed('Billing skipped', 'Billing transaction did not commit. Campaigns were not paused.', 0);
-            }
-        }
-
+        await set(newCampaignRef, duplicateData);
+        showNotification('Campaign duplicated as draft.', 'success');
+        loadCampaigns();
     } catch (error) {
-        console.error('[Billing Debug] Error during billing process:', error);
-        updateLiveFeed('Error', 'An error occurred during billing.', 0);
-    } finally {
-        isBillingInProgress = false;
+        console.error('Error duplicating campaign:', error);
+        showNotification('Failed to duplicate campaign.', 'error');
+    }
+};
+
+// ==========================================
+// CAMPAIGN DETAILS MODAL
+// ==========================================
+
+window.viewCampaign = function(id) {
+    const camp = allCampaigns.find(c => c.id === id);
+    if (!camp) return;
+
+    const modalHtml = `
+        <div class="detail-section">
+            <h4>Campaign Information</h4>
+            <div class="detail-grid">
+                <div class="detail-item"><label>Name</label><span>${escapeHtml(camp.name || 'N/A')}</span></div>
+                <div class="detail-item"><label>Status</label><span class="status-badge status-${camp.status || 'draft'}">${camp.status || 'draft'}</span></div>
+                <div class="detail-item"><label>Objective</label><span>${escapeHtml(camp.objective || 'N/A')}</span></div>
+                <div class="detail-item"><label>Category</label><span>${escapeHtml(camp.category || 'N/A')}</span></div>
+                <div class="detail-item"><label>Created</label><span>${formatDate(camp.createdAt)}</span></div>
+                <div class="detail-item"><label>Schedule</label><span>${formatDate(camp.startDate)} to ${formatDate(camp.endDate)}</span></div>
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <h4>Performance</h4>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-label">Impressions</div><div class="stat-value">${(camp.impressions || 0).toLocaleString()}</div></div>
+                <div class="stat-card"><div class="stat-label">Clicks</div><div class="stat-value">${(camp.clicks || 0).toLocaleString()}</div></div>
+                <div class="stat-card"><div class="stat-label">CTR</div><div class="stat-value">${calculateCTR(camp.clicks || 0, camp.impressions || 0)}%</div></div>
+                <div class="stat-card"><div class="stat-label">Spent</div><div class="stat-value">${formatCurrency(camp.spent || 0)}</div></div>
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <h4>Advertisement Preview</h4>
+            <div class="ad-preview-wrapper">
+                <div class="ad-preview-modes">
+                    <button class="btn btn-sm btn-outline" onclick="window.togglePreviewMode('desktop')">Desktop</button>
+                    <button class="btn btn-sm btn-outline" onclick="window.togglePreviewMode('mobile')">Mobile</button>
+                </div>
+                <div class="ad-preview-container" id="ad-preview-container">
+                    ${renderAdPreview(camp)}
+                </div>
+            </div>
+        </div>
+
+        ${camp.schedule ? `
+        <div class="detail-section">
+            <h4>Schedule Details</h4>
+            <div class="detail-grid">
+                <div class="detail-item"><label>Start Time</label><span>${camp.schedule.startTime || 'N/A'}</span></div>
+                <div class="detail-item"><label>End Time</label><span>${camp.schedule.endTime || 'N/A'}</span></div>
+                <div class="detail-item" style="grid-column: span 2;"><label>Active Days</label><span>${formatActiveDays(camp.schedule.days)}</span></div>
+            </div>
+        </div>
+        ` : ''}
+
+        ${camp.trackingUrl ? `
+        <div class="detail-section">
+            <h4>Tracking</h4>
+            <div class="detail-grid">
+                <div class="detail-item" style="grid-column: span 2;"><label>Tracking URL</label><span>${escapeHtml(camp.trackingUrl)}</span></div>
+            </div>
+        </div>
+        ` : ''}
+    `;
+
+    showModal('Campaign Details', modalHtml, [
+        { label: 'Close', class: 'btn-outline', onClick: (modal, close) => close() },
+        camp.status === 'active' ? { label: 'Pause', class: 'btn-warning', onClick: async (modal, close) => { await window.pauseCampaign(camp.id); close(); } } : null,
+        camp.status === 'paused' ? { label: 'Resume', class: 'btn-success', onClick: async (modal, close) => { await window.resumeCampaign(camp.id); close(); } } : null
+    ].filter(Boolean));
+};
+
+window.togglePreviewMode = function(mode) {
+    const container = document.getElementById('ad-preview-container');
+    if (container) {
+        const card = container.querySelector('.ad-card');
+        if (card) {
+            if (mode === 'mobile') {
+                card.classList.add('mobile-mode');
+            } else {
+                card.classList.remove('mobile-mode');
+            }
+        }
     }
 }
 
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        loadCampaigns();
-        startBillingEngine();
-    } else {
-        stopBillingEngine();
+function renderAdPreview(camp) {
+    const type = camp.adType || 'text';
+    const brandName = camp.brandName || camp.advertiserName || 'Advertiser';
+    const logoUrl = camp.brandLogoUrl || camp.brandLogo;
+    const title = camp.title || 'Ad Title';
+    const desc = camp.description || '';
+    const cta = camp.cta || 'Learn More';
+    const destUrl = camp.destinationUrl || '#';
+    
+    let domain = 'example.com';
+    try { if (camp.destinationUrl) domain = new URL(camp.destinationUrl).hostname; } catch(e) {}
+
+    let logoHtml = logoUrl ? 
+        `<img src="${escapeHtml(logoUrl)}" class="ad-logo" alt="Logo" onerror="this.style.display='none'">` : 
+        '';
+        
+    let mediaHtml = '';
+    if (type === 'image' && camp.imageUrl) {
+        mediaHtml = `<div class="ad-media"><img src="${escapeHtml(camp.imageUrl)}" alt="Ad" onerror="this.parentElement.innerHTML='<div style=&quot;display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;&quot;>Image unavailable</div>'"></div>`;
+    } else if (type === 'video' && camp.videoUrl) {
+        mediaHtml = `<div class="ad-media"><video src="${escapeHtml(camp.videoUrl)}" controls muted playsinline onerror="this.parentElement.innerHTML='<div style=&quot;display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;&quot;>Video unavailable</div>'"></video></div>`;
     }
-});
+
+    return `
+        <div class="ad-card ${type === 'text' ? 'text-only' : ''}">
+            <div class="ad-header">
+                ${logoHtml}
+                <div>
+                    <p class="ad-title">${escapeHtml(brandName)}</p>
+                    <span class="ad-sponsored">Sponsored</span>
+                </div>
+            </div>
+            ${mediaHtml}
+            <div class="ad-content">
+                <h5>${escapeHtml(title)}</h5>
+                <p>${escapeHtml(desc)}</p>
+                <a href="${escapeHtml(destUrl)}" target="_blank" rel="noopener noreferrer" class="ad-cta">${escapeHtml(cta)}</a>
+                <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem; text-align: center;">${escapeHtml(domain)}</div>
+            </div>
+        </div>
+    `;
+}
+
+function formatActiveDays(days) {
+    if (!days) return 'Not scheduled';
+    const activeDays = Object.keys(days).filter(d => days[d]).map(d => d.charAt(0).toUpperCase() + d.slice(1, 3));
+    return activeDays.length > 0 ? activeDays.join(', ') : 'No active days';
+}
+
+// ==========================================
+// HELPERS
+// ==========================================
+
+function confirmAction(title, message, onConfirm) {
+    showModal(title, `<p>${message}</p>`, [
+        { label: 'Cancel', class: 'btn-outline', onClick: (modal, close) => close() },
+        { label: 'Confirm', class: 'btn-danger', onClick: async (modal, close) => { await onConfirm(); close(); } }
+    ]);
+}
