@@ -19,10 +19,12 @@
     <link rel="stylesheet" href="assets/css/notifications.css">
     <link rel="stylesheet" href="assets/css/dashboard.css">
     <link rel="stylesheet" href="assets/css/responsive.css">
+    
+    <!-- Campaigns Specific CSS -->
+    <link rel="stylesheet" href="assets/css/campaigns.css">
 </head>
 <body class="dashboard-body">
     <div class="sidebar" id="sidebar">
-        <!-- Sidebar content identical to dashboard.html -->
         <div class="sidebar-header"><a href="dashboard.html" class="brand-logo">Maria Ads</a></div>
         <nav class="sidebar-nav">
             <ul>
@@ -50,33 +52,94 @@
         </header>
 
         <main class="dashboard-content">
-            <div class="card-header">
-                <h1>All Campaigns</h1>
-                <a href="create-ad.html" class="btn btn-primary">New Campaign</a>
+            <!-- Page Header -->
+            <div class="page-header">
+                <div>
+                    <h1>Campaign Management</h1>
+                    <p class="text-muted">Create, monitor and manage your Maria Ads campaigns.</p>
+                </div>
+                <div class="header-actions">
+                    <button id="refresh-btn" class="btn btn-outline btn-sm">↻ Refresh</button>
+                    <a href="create-ad.html" class="btn btn-primary">+ New Campaign</a>
+                </div>
             </div>
 
-            <div class="filter-bar">
-                <button class="btn btn-sm filter-btn active" data-filter="all">All</button>
-                <button class="btn btn-sm filter-btn" data-filter="active">Active</button>
-                <button class="btn btn-sm filter-btn" data-filter="paused">Paused</button>
-                <button class="btn btn-sm filter-btn" data-filter="completed">Completed</button>
-                <button class="btn btn-sm filter-btn" data-filter="pending">Pending</button>
+            <!-- Overview Statistics -->
+            <div class="stats-grid" id="campaign-stats">
+                <div class="card stat-card"><div class="stat-label">Total Campaigns</div><div class="stat-value" id="stat-total">0</div></div>
+                <div class="card stat-card"><div class="stat-label">Active</div><div class="stat-value text-success" id="stat-active">0</div></div>
+                <div class="card stat-card"><div class="stat-label">Paused</div><div class="stat-value text-warning" id="stat-paused">0</div></div>
+                <div class="card stat-card"><div class="stat-label">Total Spent</div><div class="stat-value" id="stat-spent">$0.00</div></div>
             </div>
 
-            <div class="card">
+            <!-- Billing Information -->
+            <div class="card billing-info-card">
+                <div class="billing-text">
+                    <h3>Billing Information</h3>
+                    <p>Active advertisements are billed from your wallet by the automated billing engine.</p>
+                    <span class="billing-rate-badge">Rate: $0.020 / minute / active ad</span>
+                </div>
+                <a href="wallet.html" class="btn btn-outline">Manage Wallet</a>
+            </div>
+
+            <!-- Search and Filters -->
+            <div class="card filters-card">
+                <div class="search-bar">
+                    <input type="text" id="search-input" placeholder="Search campaigns by name, objective, URL..." class="form-input">
+                </div>
+                <div class="filter-controls">
+                    <select id="status-filter" class="form-select">
+                        <option value="all">All Statuses</option>
+                        <option value="active">Active</option>
+                        <option value="paused">Paused</option>
+                        <option value="pending">Pending</option>
+                        <option value="draft">Draft</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                    <select id="objective-filter" class="form-select">
+                        <option value="all">All Objectives</option>
+                        <option value="Website Visits">Website Visits</option>
+                        <option value="Product Promotion">Product Promotion</option>
+                        <option value="Brand Awareness">Brand Awareness</option>
+                        <option value="Service Promotion">Service Promotion</option>
+                        <option value="Social Media Promotion">Social Media Promotion</option>
+                        <option value="App Promotion">App Promotion</option>
+                        <option value="Event Promotion">Event Promotion</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <select id="type-filter" class="form-select">
+                        <option value="all">All Types</option>
+                        <option value="image">Image</option>
+                        <option value="video">Video</option>
+                        <option value="text">Text</option>
+                    </select>
+                    <select id="sort-filter" class="form-select">
+                        <option value="newest">Newest</option>
+                        <option value="oldest">Oldest</option>
+                        <option value="name-az">Name A-Z</option>
+                        <option value="name-za">Name Z-A</option>
+                        <option value="impressions">Highest Impressions</option>
+                        <option value="clicks">Highest Clicks</option>
+                        <option value="spent">Highest Spent</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Campaign List (Desktop Table) -->
+            <div class="card table-card desktop-view">
                 <div class="table-responsive">
                     <table class="data-table">
                         <thead>
                             <tr>
                                 <th>Campaign</th>
                                 <th>Status</th>
-                                <th>Budget</th>
-                                <th>Spent</th>
+                                <th>Objective</th>
+                                <th>Type</th>
                                 <th>Impressions</th>
                                 <th>Clicks</th>
                                 <th>CTR</th>
-                                <th>Start Date</th>
-                                <th>End Date</th>
+                                <th>Spent</th>
+                                <th>Schedule</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -86,7 +149,23 @@
                     </table>
                 </div>
             </div>
+
+            <!-- Campaign List (Mobile Cards) -->
+            <div class="mobile-view" id="campaigns-cards-container">
+                <div class="text-center p-2">Loading campaigns...</div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-controls" id="pagination-controls">
+                <!-- Pagination buttons injected here -->
+            </div>
+
         </main>
+    </div>
+
+    <!-- Campaign Details Modal -->
+    <div id="campaign-modal-container">
+        <!-- Modal HTML injected dynamically -->
     </div>
 
     <div id="notification-container"></div>
