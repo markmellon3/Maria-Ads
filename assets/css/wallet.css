@@ -1,0 +1,116 @@
+/* Wallet Page Specific Styles */
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.header-actions { display: flex; gap: 0.5rem; align-items: center; }
+
+/* Billing Status Panel */
+.billing-status-card {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #4f46e5;
+}
+
+.billing-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.billing-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+}
+
+.billing-state {
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.billing-state.active { background: #d1fae5; color: #065f46; }
+.billing-state.no-ads { background: #e0e7ff; color: #3730a3; }
+.billing-state.paused { background: #fef3c7; color: #92400e; }
+.billing-state.error { background: #fee2e2; color: #991b1b; }
+
+.billing-state::before {
+    content: '●';
+    margin-right: 6px;
+    font-size: 10px;
+}
+
+.billing-state.active::before { color: #10b981; animation: pulse 2s infinite; }
+.billing-state.paused::before { content: '!'; font-size: 12px; color: #f59e0b; }
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+
+.billing-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.5rem;
+}
+
+.billing-stat { display: flex; flex-direction: column; }
+.billing-stat-label { font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.25rem; }
+.billing-stat-value { font-size: 1.1rem; font-weight: 700; color: #1e293b; }
+
+/* Desktop/Mobile Toggles */
+.desktop-view { display: block; }
+.mobile-view { display: none; }
+
+/* Mobile Cards for Active Ads */
+.mobile-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+.mobile-card-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+.mobile-card-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #64748b;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .desktop-view { display: none; }
+    .mobile-view { display: block; }
+    .billing-stats-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 480px) {
+    .billing-stats-grid { grid-template-columns: 1fr; }
+    .header-actions { width: 100%; flex-direction: column; }
+    .header-actions .btn { width: 100%; }
+}
