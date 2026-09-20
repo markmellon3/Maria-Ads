@@ -47,12 +47,34 @@ async function loadCampaigns() {
     cardsContainer.innerHTML = `<div class="text-center p-2">Loading campaigns...</div>`;
 
     try {
+        console.log('Fetching campaigns for user:', user.uid);
         const campaignsRef = ref(database, 'campaigns');
+        
+        // Try indexed query first
         const userCampaignsQuery = query(campaignsRef, orderByChild('advertiserId'), equalTo(user.uid));
         const snapshot = await get(userCampaignsQuery);
 
+        console.log('Indexed query exists:', snapshot.exists());
+
         if (snapshot.exists()) {
             allCampaigns = Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data }));
+        } else {
+            // Fallback: Fetch all campaigns and filter client-side
+            // This fixes issues where Firebase indexing rules are not set up
+            console.log('Indexed query failed or empty. Falling back to fetch all...');
+            const allSnapshot = await get(campaignsRef);
+            if (allSnapshot.exists()) {
+                const allData = allSnapshot.val();
+                allCampaigns = Object.entries(allData)
+                    .map(([id, data]) => ({ id, ...data }))
+                    .filter(c => c.advertiserId === user.uid || c.userId === user.uid);
+                console.log('Fallback found campaigns:', allCampaigns.length);
+            } else {
+                allCampaigns = [];
+            }
+        }
+
+        if (allCampaigns.length > 0) {
             renderStats(allCampaigns);
             applyFilters();
         } else {
@@ -62,7 +84,7 @@ async function loadCampaigns() {
         }
     } catch (error) {
         console.error("Error fetching campaigns:", error);
-        tbody.innerHTML = `<tr><td colspan="10" class="text-center text-danger">Error loading campaigns.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center text-danger">Error loading campaigns. Check console.</td></tr>`;
         cardsContainer.innerHTML = `<div class="text-center text-danger p-2">Error loading campaigns.</div>`;
         showNotification('Failed to load campaigns.', 'error');
     }
@@ -211,15 +233,12 @@ function renderPagination(totalPages) {
     }
 
     let html = '';
-    // Previous button
     html += `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="window.changePage(${currentPage - 1})">&laquo;</button>`;
 
-    // Page numbers
     for (let i = 1; i <= totalPages; i++) {
         html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="window.changePage(${i})">${i}</button>`;
     }
 
-    // Next button
     html += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="window.changePage(${currentPage + 1})">&raquo;</button>`;
 
     container.innerHTML = html;
