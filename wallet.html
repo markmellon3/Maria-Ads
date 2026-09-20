@@ -19,10 +19,12 @@
     <link rel="stylesheet" href="assets/css/notifications.css">
     <link rel="stylesheet" href="assets/css/dashboard.css">
     <link rel="stylesheet" href="assets/css/responsive.css">
+    
+    <!-- Wallet Specific CSS -->
+    <link rel="stylesheet" href="assets/css/wallet.css">
 </head>
 <body class="dashboard-body">
     <div class="sidebar" id="sidebar">
-        <!-- Sidebar content identical to dashboard.html -->
         <div class="sidebar-header"><a href="dashboard.html" class="brand-logo">Maria Ads</a></div>
         <nav class="sidebar-nav">
             <ul>
@@ -50,28 +52,104 @@
         </header>
 
         <main class="dashboard-content">
-            <div class="card-header">
-                <h1>Your Wallet</h1>
-                <button class="btn btn-primary" id="add-funds-btn">Add Funds</button>
-            </div>
-
-            <div class="grid grid-3 summary-cards">
-                <div class="card stat-card">
-                    <h3>Available Balance</h3>
-                    <p class="stat-value" id="wallet-balance">$0.00</p>
+            <div class="page-header">
+                <div>
+                    <h1>Your Wallet</h1>
+                    <p class="text-muted">Monitor your live billing and manage funds.</p>
                 </div>
-                <div class="card stat-card">
-                    <h3>Total Deposited</h3>
-                    <p class="stat-value" id="wallet-deposited">$0.00</p>
-                </div>
-                <div class="card stat-card">
-                    <h3>Total Spent</h3>
-                    <p class="stat-value" id="wallet-spent">$0.00</p>
+                <div class="header-actions">
+                    <button class="btn btn-outline btn-sm" id="refresh-wallet-btn">↻ Refresh</button>
+                    <button class="btn btn-primary" id="add-funds-btn">Add Funds</button>
                 </div>
             </div>
 
-            <div class="card">
-                <h2>Transaction History</h2>
+            <!-- Wallet Summary Cards -->
+            <div class="stats-grid">
+                <div class="card stat-card">
+                    <div class="stat-label">Available Balance</div>
+                    <div class="stat-value text-success" id="wallet-balance">$0.00</div>
+                </div>
+                <div class="card stat-card">
+                    <div class="stat-label">Total Deposited</div>
+                    <div class="stat-value" id="wallet-deposited">$0.00</div>
+                </div>
+                <div class="card stat-card">
+                    <div class="stat-label">Total Spent</div>
+                    <div class="stat-value text-danger" id="wallet-spent">$0.00</div>
+                </div>
+                <div class="card stat-card">
+                    <div class="stat-label">Today's Ad Spend</div>
+                    <div class="stat-value" id="wallet-today-spend">$0.00</div>
+                </div>
+            </div>
+
+            <!-- Live Billing Status Panel -->
+            <div class="card billing-status-card">
+                <div class="billing-header">
+                    <h3>LIVE BILLING</h3>
+                    <span class="billing-state" id="billing-state-indicator">Initializing...</span>
+                </div>
+                <div class="billing-stats-grid">
+                    <div class="billing-stat">
+                        <span class="billing-stat-label">Billing Rate</span>
+                        <span class="billing-stat-value">$0.020 / min / ad</span>
+                    </div>
+                    <div class="billing-stat">
+                        <span class="billing-stat-label">Active Ads</span>
+                        <span class="billing-stat-value" id="active-ad-count">0</span>
+                    </div>
+                    <div class="billing-stat">
+                        <span class="billing-stat-label">Current Spend Rate</span>
+                        <span class="billing-stat-value" id="current-spend-rate">$0.000 / min</span>
+                    </div>
+                    <div class="billing-stat">
+                        <span class="billing-stat-label">Last Billing Cycle</span>
+                        <span class="billing-stat-value" id="last-billing-cycle">N/A</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Ad Billing Table -->
+            <div class="card table-card">
+                <div class="card-header">
+                    <h3>Active Advertisement Billing</h3>
+                </div>
+                <div class="table-responsive desktop-view">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Campaign</th>
+                                <th>Status</th>
+                                <th>Active Time</th>
+                                <th>Rate</th>
+                                <th>Current Spend</th>
+                                <th>Last Billed</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="active-ads-tbody">
+                            <tr><td colspan="7" class="text-center">No active advertisements.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mobile-view" id="active-ads-cards">
+                    <div class="text-center p-2">No active advertisements.</div>
+                </div>
+            </div>
+
+            <!-- Transaction History -->
+            <div class="card table-card">
+                <div class="card-header">
+                    <h3>Transaction History</h3>
+                    <div class="filter-controls">
+                        <select id="tx-type-filter" class="form-select form-select-sm">
+                            <option value="all">All Types</option>
+                            <option value="deposit">Deposit</option>
+                            <option value="ad_spending">Ad Spending</option>
+                            <option value="refund">Refund</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="table-responsive">
                     <table class="data-table">
                         <thead>
@@ -81,14 +159,16 @@
                                 <th>Amount</th>
                                 <th>Status</th>
                                 <th>Reference</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="wallet-transactions-tbody">
-                            <tr><td colspan="5" class="text-center">No transactions yet.</td></tr>
+                            <tr><td colspan="6" class="text-center">No transactions yet.</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
+
         </main>
     </div>
 
